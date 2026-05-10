@@ -13,7 +13,7 @@ export function Avatar({ author, size = 30, gender }: { author: Author; size?: n
       ? [
         "variant13", "variant14", "variant15", "variant16",
         "variant17", "variant18", "variant19", "variant21", "variant23",
-        "variant29", "variant31", "variant32", "variant33", "variant35",
+        "variant32", "variant33", "variant35",
         "variant40", "variant41", "variant42", "variant45", "variant46", "variant48"
       ]
       : [
@@ -27,15 +27,13 @@ export function Avatar({ author, size = 30, gender }: { author: Author; size?: n
       ];
 
     const avatar = createAvatar(lorelei, {
-      seed: "liam",
+      seed: author.name,
       beardProbability: 0,
       earrings: [],
       earringsColor: [],
       earringsProbability: 0,
       eyebrows: [
-        "variant01", "variant02", "variant03", "variant04", "variant05",
-        "variant07", "variant08", "variant09", "variant10", "variant11",
-        "variant12", "variant13", "variant06"
+        "variant03"
       ],
       eyes: [
         "variant01", "variant02", "variant03", "variant04", "variant05",
@@ -83,14 +81,14 @@ export function Avatar({ author, size = 30, gender }: { author: Author; size?: n
         <span
           className="absolute"
           style={{
-            top: -size * 0.15,
-            right: -size * 0.15,
-            width: size * 0.45,
-            height: size * 0.45,
+            top: 0,
+            right: 0,
+            width: size * 0.3,
+            height: size * 0.3,
           }}
         >
           <SealCheckIcon
-            size={size * 0.4}
+            size={size * 0.3}
             weight="fill"
             className="text-blue-500"
           />

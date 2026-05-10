@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRightIcon as ArrowRight,
-  CheckCircleIcon as CheckCircle,
+  SealCheckIcon as CheckCircle,
   SpinnerIcon,
   ArrowCircleLeftIcon,
   ArrowsClockwiseIcon,
@@ -214,11 +214,11 @@ export default function CreateAccountPage() {
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen overflow-hidden">
-      <AuthSidebar 
-        imageSrc={authImages[1]} 
-        side="left" 
+      <AuthSidebar
+        imageSrc={authImages[1]}
+        side="left"
         title="Start Your Legacy"
-        subtitle="Join the most focused community" 
+        subtitle="Join the most focused community"
       />
       <div className="flex-1 flex bg-white items-center lg:justify-end justify-center p-6 sm:p-10 z-20 relative lg:mr-[2%]">
         <div className="w-full relative max-w-md p-4 z-10">

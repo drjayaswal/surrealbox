@@ -17,8 +17,5 @@ export const FLORAL_IMAGE_IDS = [
 ];
 
 export const getOptimizedUnsplashUrl = (id: string) => {
-  // We use auto=format (chooses AVIF/WebP)
-  // q=75 (perfect balance)
-  // w=1200 (sufficient for a 42vw sidebar even on 1440p screens)
   return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&q=75&w=1200`;
 };

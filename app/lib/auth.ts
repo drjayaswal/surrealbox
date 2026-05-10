@@ -46,7 +46,6 @@ export const auth = betterAuth({
   //   },
   // },
   plugins: [
-    nextCookies(),
     phoneNumber({
       otpLength: 8,
       sendOTP: ({ phoneNumber, code }) => {
@@ -82,5 +81,6 @@ export const auth = betterAuth({
       },
     }),
     admin(),
+    nextCookies(),
   ],
 });

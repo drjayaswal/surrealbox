@@ -4,6 +4,7 @@ import { db } from "@/app/db/index";
 import { comments, answers, questions } from "@/app/db/schema";
 import { headers } from "next/headers";
 import { eq, desc, and, sql } from "drizzle-orm";
+import { checkContent } from "@/lib/moderator";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -90,6 +91,17 @@ export async function POST(req: NextRequest) {
     }
 
     const { parentId, parentType, content } = body;
+
+    // Content Moderation
+    const modResult = await checkContent(content || "");
+    console.log(modResult)
+    if (!modResult.isAppropriate) {
+      return NextResponse.json({
+        error: "Inappropriate content detected",
+        details: modResult.message,
+        confidence: modResult.confidence
+      }, { status: 400 });
+    }
 
     if (!parentId?.trim() || !parentType?.trim() || !content?.trim()) {
       return NextResponse.json(

@@ -19,7 +19,10 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `API Error: ${response.status}`);
+    // Throw an object with the message and the full error data
+    const error = new Error(errorData.error || errorData.message || `API Error: ${response.status}`) as any;
+    error.data = errorData;
+    throw error;
   }
 
   return response.json() as Promise<T>;

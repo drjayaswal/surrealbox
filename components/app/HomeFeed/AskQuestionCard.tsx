@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { XIcon, PlusIcon, HashIcon, CaretRightIcon, SpinnerGapIcon, CheckCircleIcon, CaretLeftIcon } from "@phosphor-icons/react";
+import { XIcon, PlusIcon, HashIcon, CaretRightIcon, SpinnerGapIcon, SealCheckIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -176,12 +176,12 @@ export function AskQuestionModal({ open, onClose, onSubmit }: AskQuestionModalPr
                             )}>
                               Step 0{n}
                             </span>
-                            {done && <CheckCircleIcon size={12} weight="fill" className="text-primary" />}
+                            {done && <SealCheckIcon size={12} weight="fill" className="text-primary" />}
                           </div>
                           <div className="h-1 rounded-full bg-gray-100 overflow-hidden relative">
                             <motion.div
                               initial={false}
-                              animate={{ 
+                              animate={{
                                 width: progressWidth,
                                 backgroundColor: progressColor
                               }}

@@ -147,7 +147,7 @@ const Navbar = () => {
           </div>
         </div>
         <div className="hidden lg:block h-px w-full" />
-        <div className="flex lg:hidden items-center h-14 px-3 pointer-events-auto">
+        <div className="flex lg:hidden items-center justify-end h-14 px-3 pointer-events-auto">
           <motion.button
             onClick={() => setMobileOpen(true)}
             whileTap={{ scale: 0.92 }}
@@ -205,7 +205,7 @@ const Navbar = () => {
                       >
                         <Link
                           href={link.href}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-4xl text-sm font-semibold transition-all duration-150 ${isActive
+                          className={`flex items-center gap-3 px-4 py-3 rounded-4xl text-sm transition-all duration-150 ${isActive
                             ? "bg-primary text-white"
                             : "text-black hover:bg-gray-100"
                             }`}
@@ -226,7 +226,7 @@ const Navbar = () => {
                     <button
                       onClick={handleSignOut}
                       disabled={isSigningOut}
-                      className="flex items-center gap-3 w-full px-4 py-3 rounded-4xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-all duration-150"
+                      className="flex items-center gap-3 w-full px-4 py-3 rounded-4xl text-sm text-red-500 hover:bg-red-50 transition-all duration-150"
                     >
                       {isSigningOut ? (
                         <div className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin" />

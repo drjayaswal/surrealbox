@@ -5,6 +5,7 @@ import { questions } from "@/app/db/schema";
 import { headers } from "next/headers";
 import { slugify } from "@/lib/utils";
 import { eq, desc, and, ilike, or, count } from "drizzle-orm";
+import { checkContent } from "@/lib/moderator";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -115,6 +116,20 @@ export async function POST(req: NextRequest) {
     }
 
     const { title, body: questionBody, tags } = body;
+
+    // Content Moderation
+    const [titleMod, bodyMod] = await Promise.all([
+      checkContent(title || ""),
+      checkContent(questionBody || "")
+    ]);
+
+    if (!titleMod.isAppropriate || !bodyMod.isAppropriate) {
+      return NextResponse.json({
+        error: "Inappropriate content detected",
+        details: !titleMod.isAppropriate ? titleMod.message : bodyMod.message,
+        confidence: !titleMod.isAppropriate ? titleMod.confidence : bodyMod.confidence
+      }, { status: 400 });
+    }
 
     if (!title?.trim() || !questionBody?.trim()) {
       return NextResponse.json(

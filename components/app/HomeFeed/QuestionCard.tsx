@@ -13,7 +13,7 @@ import {
   CaretDownIcon,
   PaperPlaneIcon,
   SpinnerGapIcon,
-  CheckCircleIcon,
+  SealCheckIcon,
   PlusCircleIcon,
   LightbulbIcon,
   TagIcon,
@@ -25,7 +25,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSession } from "@/app/lib/auth-client";
 import { useUser } from "@/context/UserContext";
 import { ReputationBadge } from "./ReputationBadge";
-import Link from "next/link";
+import { LinkifiedText } from "./LinkifiedText";
 
 export function QuestionCard({
   question,
@@ -71,6 +71,33 @@ export function QuestionCard({
   const [isTitleExpanded, setIsTitleExpanded] = useState(false);
   const [isVoteShaking, setIsVoteShaking] = useState(false);
   const [isAnswerShaking, setIsAnswerShaking] = useState(false);
+  const [isCommentShaking, setIsCommentShaking] = useState(false);
+  const lastActionTime = useRef<number>(0);
+
+  function checkCooldown(type: "vote" | "answer" | "comment") {
+    const now = Date.now();
+    if (now - lastActionTime.current < 5000) {
+      if (type === "vote") {
+        setIsVoteShaking(true);
+        setTimeout(() => setIsVoteShaking(false), 400);
+      } else if (type === "answer") {
+        setIsAnswerShaking(true);
+        setTimeout(() => setIsAnswerShaking(false), 400);
+      } else if (type === "comment") {
+        setIsCommentShaking(true);
+        setTimeout(() => setIsCommentShaking(false), 400);
+      }
+      toast.error(`Please wait ${Math.ceil((5000 - (now - lastActionTime.current)) / 1000)}s before next action`, {
+        id: "cooldown-toast",
+      });
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate(200);
+      }
+      return true;
+    }
+    lastActionTime.current = now;
+    return false;
+  }
 
   useEffect(() => {
     setLocalCommentCount(question.commentCount);
@@ -222,6 +249,8 @@ export function QuestionCard({
   }
 
   async function handleVote(dir: "up" | "down") {
+    if (checkCooldown("vote")) return;
+
     if (!session) {
       onAuthRequired({
         title: "Voice your opinion",
@@ -303,6 +332,8 @@ export function QuestionCard({
   }
 
   async function handlePostComment() {
+    if (checkCooldown("comment")) return;
+
     if (!session) {
       onAuthRequired({
         title: "Join the discussion",
@@ -342,7 +373,15 @@ export function QuestionCard({
         body: JSON.stringify({ parentId: question.id, parentType: "question", content: tempComment.content }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to post comment");
+      if (!res.ok) {
+        if (data.details) {
+          toast.error(data.error || "Inappropriate content", {
+            description: `Flagged for: ${data.details} (${data.confidence})`,
+          });
+          throw new Error("moderated");
+        }
+        throw new Error(data.error || "Failed to post comment");
+      }
 
       setLocalComments((prev) => prev.map(c => c.id === tempId ? data : c));
       setCommentsFetched(true);
@@ -351,13 +390,17 @@ export function QuestionCard({
       setLocalComments(prevComments);
       setLocalCommentCount(prevCount);
       setCommentBody(tempComment.content);
-      toast.error(err.message);
+      if (err.message !== "moderated") {
+        toast.error(err.message);
+      }
     } finally {
       setIsSubmittingComment(false);
     }
   }
 
   async function handlePostAnswer() {
+    if (checkCooldown("answer")) return;
+
     if (!session) {
       onAuthRequired({
         title: "Share your expertise",
@@ -407,7 +450,15 @@ export function QuestionCard({
         body: JSON.stringify({ questionId: question.id, body: tempAnswer.body }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to post answer");
+      if (!res.ok) {
+        if (data.details) {
+          toast.error(data.error || "Inappropriate content", {
+            description: `Flagged for: ${data.details} (${data.confidence})`,
+          });
+          throw new Error("moderated");
+        }
+        throw new Error(data.error || "Failed to post answer");
+      }
 
       setLocalAnswers((prev) => prev.map(a => a.id === tempId ? data : a));
       setAnswersFetched(true);
@@ -416,7 +467,9 @@ export function QuestionCard({
       setLocalAnswers(prevAnswers);
       setLocalAnswerCount(prevCount);
       setAnswerBody(tempAnswer.body);
-      toast.error(err.message);
+      if (err.message !== "moderated") {
+        toast.error(err.message);
+      }
     } finally {
       setIsSubmittingAnswer(false);
     }
@@ -511,7 +564,7 @@ export function QuestionCard({
                 )}
                 onClick={handleToggleTitle}
               >
-                {question.title}
+                <LinkifiedText text={question.title} />
               </motion.h3>
               <button
                 onClick={handleToggleTitle}
@@ -524,275 +577,279 @@ export function QuestionCard({
               </button>
             </div>
             <div className="flex items-center flex-wrap gap-2.5 sm:gap-5 border-t border-gray-100 pt-1.5 sm:pt-2">
-            <button
-              onClick={handleToggleContext}
-              className={cn(
-                "flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12.5px] font-medium transition-colors",
-                isBodyExpanded
-                  ? "text-primary"
-                  : "text-muted-foreground/50 hover:text-primary/70"
-              )}
-            >
-              <LightbulbIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={isBodyExpanded ? "fill" : "regular"} />
-              <span className="hidden sm:inline">Context</span>
-              <CaretDownIcon
-                size={10}
-                className={cn("transition-transform duration-200", isBodyExpanded && "rotate-180")}
-              />
-            </button>
-            <button
-              onClick={handleToggleTags}
-              className={cn(
-                "flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12.5px] font-medium transition-colors",
-                showTags
-                  ? "text-primary"
-                  : "text-muted-foreground/50 hover:text-primary/70"
-              )}
-            >
-              <TagIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={showTags ? "fill" : "regular"} />
-              <span className="hidden sm:inline">Tags</span>
-              <CaretDownIcon
-                size={10}
-                className={cn("transition-transform duration-200", showTags && "rotate-180")}
-              />
-            </button>
-            <button
-              onClick={handleToggleComments}
-              className={cn(
-                "flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12.5px] font-medium transition-colors",
-                showComments
-                  ? "text-primary"
-                  : "text-muted-foreground/50 hover:text-primary/70",
-              )}
-            >
-              <ChatCircleDotsIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={showComments ? "fill" : "regular"} />
-              <span>{localCommentCount}<span className="hidden sm:inline ml-1">Comments</span></span>
-              <CaretDownIcon
-                size={10}
-                className={cn("transition-transform duration-200", showComments && "rotate-180")}
-              />
-            </button>
-
-            <button
-              onClick={handleToggleAnswers}
-              className={cn(
-                "flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12.5px] font-medium transition-colors relative",
-                showAnswers
-                  ? "text-primary"
-                  : "text-muted-foreground/50 hover:text-primary/70",
-              )}
-            >
-              <CheckCircleIcon size={14} className={cn("sm:w-[16px] sm:h-[16px]", localAnswers.some(a => a.isAccepted) && "text-green-600")} weight={showAnswers || localAnswers.some(a => a.isAccepted) ? "fill" : "regular"} />
-              <span>{localAnswerCount}<span className="hidden sm:inline ml-1">Answers</span></span>
-              <CaretDownIcon
-                size={10}
-                className={cn("transition-transform duration-200", showAnswers && "rotate-180")}
-              />
-            </button>
-          </div>
-
-
-          <AnimatePresence>
-            {isBodyExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="overflow-hidden"
+              <button
+                onClick={handleToggleContext}
+                className={cn(
+                  "flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12.5px] font-medium transition-colors",
+                  isBodyExpanded
+                    ? "text-primary"
+                    : "text-muted-foreground/50 hover:text-primary/70"
+                )}
               >
-                <div className="py-4">
-                  <div className="">
-                    <p className="text-[13px] max-h-[100px] overflow-auto sm:text-[14px] text-muted-foreground leading-[1.7] selection:bg-primary/10 wrap-break-word">
-                      {question.body}
-                    </p>
+                <LightbulbIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={isBodyExpanded ? "fill" : "regular"} />
+                <span className="hidden sm:inline">Context</span>
+                <CaretDownIcon
+                  size={10}
+                  className={cn("transition-transform duration-200", isBodyExpanded && "rotate-180")}
+                />
+              </button>
+              <button
+                onClick={handleToggleTags}
+                className={cn(
+                  "flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12.5px] font-medium transition-colors",
+                  showTags
+                    ? "text-primary"
+                    : "text-muted-foreground/50 hover:text-primary/70"
+                )}
+              >
+                <TagIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={showTags ? "fill" : "regular"} />
+                <span className="hidden sm:inline">Tags</span>
+                <CaretDownIcon
+                  size={10}
+                  className={cn("transition-transform duration-200", showTags && "rotate-180")}
+                />
+              </button>
+              <button
+                onClick={handleToggleComments}
+                className={cn(
+                  "flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12.5px] font-medium transition-colors",
+                  showComments
+                    ? "text-primary"
+                    : "text-muted-foreground/50 hover:text-primary/70",
+                )}
+              >
+                <ChatCircleDotsIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={showComments ? "fill" : "regular"} />
+                <span>{localCommentCount}<span className="hidden sm:inline ml-1">Comments</span></span>
+                <CaretDownIcon
+                  size={10}
+                  className={cn("transition-transform duration-200", showComments && "rotate-180")}
+                />
+              </button>
+
+              <button
+                onClick={handleToggleAnswers}
+                className={cn(
+                  "flex items-center gap-1 sm:gap-1.5 text-[11px] sm:text-[12.5px] font-medium transition-colors relative",
+                  showAnswers
+                    ? "text-primary"
+                    : "text-muted-foreground/50 hover:text-primary/70",
+                )}
+              >
+                <SealCheckIcon size={14} className={cn("sm:w-[16px] sm:h-[16px]", localAnswers.some(a => a.isAccepted) && "text-purple-600")} weight={showAnswers || localAnswers.some(a => a.isAccepted) ? "fill" : "regular"} />
+                <span>{localAnswerCount}<span className="hidden sm:inline ml-1">Answers</span></span>
+                <CaretDownIcon
+                  size={10}
+                  className={cn("transition-transform duration-200", showAnswers && "rotate-180")}
+                />
+              </button>
+            </div>
+
+
+            <AnimatePresence>
+              {isBodyExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="py-4">
+                    <div className="">
+                      <p className="text-[13px] max-h-[100px] overflow-auto sm:text-[14px] text-muted-foreground leading-[1.7] selection:bg-primary/10 wrap-break-word">
+                        <LinkifiedText text={question.body} />
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <AnimatePresence>
-            {showTags && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="overflow-hidden"
-              >
-                <div className="py-4">
-                  <div className="flex flex-wrap gap-2">
-                    {question.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="border border-gray-200/50 text-black/50 px-2.5 py-1 text-[11px] cursor-default"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+            <AnimatePresence>
+              {showTags && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="py-4">
+                    <div className="flex flex-wrap gap-2">
+                      {question.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="border border-gray-200/50 text-black/50 px-2.5 py-1 text-[11px] cursor-default"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          <AnimatePresence>
-            {showComments && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="overflow-hidden"
-              >
-                <div className="py-4">
-                  <div className="flex items-center gap-2 bg-gray-100 shadow-inner border border-gray-100/50 rounded-xl px-2 py-1 mb-4 group/input w-full">
-                    <Input
-                      className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[13px] h-8 px-1"
-                      placeholder="Add a comment..."
-                      value={commentBody}
-                      onChange={(e) => setCommentBody(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handlePostComment();
-                      }}
-                      disabled={isSubmittingComment}
-                    />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 text-primary hover:bg-white hover:shadow-sm active:scale-95"
-                      onClick={handlePostComment}
-                      disabled={isSubmittingComment || !commentBody.trim()}
+            <AnimatePresence>
+              {showComments && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="py-4">
+                    <motion.div
+                      animate={isCommentShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
+                      transition={{ duration: 0.4 }}
+                      className="flex items-center gap-2 bg-gray-100 shadow-inner border border-gray-100/50 rounded-xl px-2 py-1 mb-4 group/input w-full"
                     >
-                      {isSubmittingComment ? (
-                        <SpinnerGapIcon size={14} className="animate-spin" />
-                      ) : (
-                        <PaperPlaneIcon size={14} className="rotate-45" />
-                      )}
-                    </Button>
-                  </div>
-
-                  <div className="space-y-1 pl-1">
-                    {isLoadingComments && localComments.length === 0 ? (
-                      <div className="flex justify-center py-6">
-                        <SpinnerGapIcon size={20} className="animate-spin text-primary/30" />
-                      </div>
-                    ) : localComments.length === 0 ? (
-                      <p className="text-[12px] text-muted-foreground/30 py-2">No comments yet.</p>
-                    ) : (
-                      <>
-                        {localComments.map((c) => (
-                          <CommentItem key={c.id} comment={c} />
-                        ))}
-                        {isLoadingComments && (
-                          <div className="flex justify-center py-4">
-                            <SpinnerGapIcon size={18} className="animate-spin text-primary/30" />
-                          </div>
-                        )}
-                        {hasMoreComments && !isLoadingComments && (
-                          <Button
-                            variant="light"
-                            onClick={() => fetchComments(commentPage + 1)}
-                            className="w-full text-black flex items-center gap-2 mt-2"
-                          >
-                            Load more comments
-                            <PlusCircleIcon />
-                          </Button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {showAnswers && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
-                className="overflow-hidden"
-              >
-                <div className="py-4">
-                  <motion.div
-                    animate={isAnswerShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
-                    transition={{ duration: 0.4 }}
-                    className={cn(
-                      "flex items-center gap-2 bg-gray-100 shadow-inner border border-gray-100/50 rounded-xl px-2 py-1 mb-4 group/input w-full",
-                      isAuthor && "opacity-60 cursor-not-allowed"
-                    )}
-                  >
-                    <Input
-                      className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[13px] h-8 px-1"
-                      placeholder={isAuthor ? "Wait for community members to answer your question." : "Write your answer..."}
-                      value={isAuthor ? "" : answerBody}
-                      onChange={(e) => !isAuthor && setAnswerBody(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !isAuthor) handlePostAnswer();
-                      }}
-                      disabled={isSubmittingAnswer || isAuthor}
-                    />
-                    {!isAuthor && (
+                      <Input
+                        className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[13px] h-8 px-1"
+                        placeholder="Add a comment..."
+                        value={commentBody}
+                        onChange={(e) => setCommentBody(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handlePostComment();
+                        }}
+                        disabled={isSubmittingComment}
+                      />
                       <Button
                         size="icon"
                         variant="ghost"
                         className="h-7 w-7 text-primary hover:bg-white hover:shadow-sm active:scale-95"
-                        onClick={handlePostAnswer}
-                        disabled={isSubmittingAnswer || !answerBody.trim()}
+                        onClick={handlePostComment}
+                        disabled={isSubmittingComment || !commentBody.trim()}
                       >
-                        {isSubmittingAnswer ? (
+                        {isSubmittingComment ? (
                           <SpinnerGapIcon size={14} className="animate-spin" />
                         ) : (
                           <PaperPlaneIcon size={14} className="rotate-45" />
                         )}
                       </Button>
-                    )}
-                  </motion.div>
+                    </motion.div>
 
-                  <div className="space-y-4 px-2">
-                    {isLoadingAnswers && localAnswers.length === 0 ? (
-                      <div className="flex justify-center py-10">
-                        <SpinnerGapIcon size={24} className="animate-spin text-primary/30" />
-                      </div>
-                    ) : localAnswers.length === 0 ? (
-                      <p className="text-[12px] text-muted-foreground/30 py-2 px-1">No answers yet.</p>
-
-                    ) : (
-                      <>
-                        {localAnswers.map((answer) => (
-                          <AnswerCard
-                            key={answer.id}
-                            answer={answer}
-                            onAuthRequired={onAuthRequired}
-                            questionAuthorId={question.authorId}
-                            onAccept={handleAcceptAnswer}
-                          />
-                        ))}
-                        {isLoadingAnswers && (
-                          <div className="flex justify-center py-6">
-                            <SpinnerGapIcon size={22} className="animate-spin text-primary/30" />
-                          </div>
-                        )}
-                        {hasMoreAnswers && !isLoadingAnswers && (
-                          <Button
-                            variant="light"
-                            onClick={() => fetchAnswers(answerPage + 1)}
-                            className="w-full text-black flex items-center gap-2 mt-2"
-                          >
-                            Load more answers
-                            <PlusCircleIcon />
-                          </Button>
-                        )}
-                      </>
-                    )}
+                    <div className="space-y-1 pl-1">
+                      {isLoadingComments && localComments.length === 0 ? (
+                        <div className="flex justify-center py-6">
+                          <SpinnerGapIcon size={20} className="animate-spin text-primary/30" />
+                        </div>
+                      ) : localComments.length === 0 ? (
+                        <p className="text-[12px] text-muted-foreground/30 py-2">No comments yet.</p>
+                      ) : (
+                        <>
+                          {localComments.map((c) => (
+                            <CommentItem key={c.id} comment={c} />
+                          ))}
+                          {isLoadingComments && (
+                            <div className="flex justify-center py-4">
+                              <SpinnerGapIcon size={18} className="animate-spin text-primary/30" />
+                            </div>
+                          )}
+                          {hasMoreComments && !isLoadingComments && (
+                            <Button
+                              variant="light"
+                              onClick={() => fetchComments(commentPage + 1)}
+                              className="w-full text-black flex items-center gap-2 mt-2"
+                            >
+                              Load more comments
+                              <PlusCircleIcon />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {showAnswers && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="py-4">
+                    <motion.div
+                      animate={isAnswerShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
+                      transition={{ duration: 0.4 }}
+                      className={cn(
+                        "flex items-center gap-2 bg-gray-100 shadow-inner border border-gray-100/50 rounded-xl px-2 py-1 mb-4 group/input w-full",
+                        isAuthor && "opacity-60 cursor-not-allowed"
+                      )}
+                    >
+                      <Input
+                        className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[13px] h-8 px-1"
+                        placeholder={isAuthor ? "Wait for community members to answer your question." : "Write your answer..."}
+                        value={isAuthor ? "" : answerBody}
+                        onChange={(e) => !isAuthor && setAnswerBody(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !isAuthor) handlePostAnswer();
+                        }}
+                        disabled={isSubmittingAnswer || isAuthor}
+                      />
+                      {!isAuthor && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-primary hover:bg-white hover:shadow-sm active:scale-95"
+                          onClick={handlePostAnswer}
+                          disabled={isSubmittingAnswer || !answerBody.trim()}
+                        >
+                          {isSubmittingAnswer ? (
+                            <SpinnerGapIcon size={14} className="animate-spin" />
+                          ) : (
+                            <PaperPlaneIcon size={14} className="rotate-45" />
+                          )}
+                        </Button>
+                      )}
+                    </motion.div>
+
+                    <div className="space-y-4 px-2">
+                      {isLoadingAnswers && localAnswers.length === 0 ? (
+                        <div className="flex justify-center py-10">
+                          <SpinnerGapIcon size={24} className="animate-spin text-primary/30" />
+                        </div>
+                      ) : localAnswers.length === 0 ? (
+                        <p className="text-[12px] text-muted-foreground/30 py-2 px-1">No answers yet.</p>
+
+                      ) : (
+                        <>
+                          {localAnswers.map((answer) => (
+                            <AnswerCard
+                              key={answer.id}
+                              answer={answer}
+                              onAuthRequired={onAuthRequired}
+                              questionAuthorId={question.authorId}
+                              onAccept={handleAcceptAnswer}
+                            />
+                          ))}
+                          {isLoadingAnswers && (
+                            <div className="flex justify-center py-6">
+                              <SpinnerGapIcon size={22} className="animate-spin text-primary/30" />
+                            </div>
+                          )}
+                          {hasMoreAnswers && !isLoadingAnswers && (
+                            <Button
+                              variant="light"
+                              onClick={() => fetchAnswers(answerPage + 1)}
+                              className="w-full text-black flex items-center gap-2 mt-2"
+                            >
+                              Load more answers
+                              <PlusCircleIcon />
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>

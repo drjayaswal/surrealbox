@@ -9,21 +9,20 @@ import {
   ArrowFatUpIcon,
   ArrowFatDownIcon,
   ChatCircleDotsIcon,
-  CheckCircleIcon,
+  SealCheckIcon,
   CaretDownIcon,
   PaperPlaneIcon,
   SpinnerGapIcon,
   PlusCircleIcon,
-  SealCheckIcon,
 } from "@phosphor-icons/react";
-import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { useSession } from "@/app/lib/auth-client";
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/context/UserContext";
 import { ReputationBadge } from "./ReputationBadge";
 import { Button } from "@/components/ui/button";
+import { LinkifiedText } from "./LinkifiedText";
+import { toast } from "sonner";
 
 export function AnswerCard({
   answer,
@@ -49,6 +48,26 @@ export function AnswerCard({
   const [isAccepting, setIsAccepting] = useState(false);
   const [isVoteShaking, setIsVoteShaking] = useState(false);
   const [isCommentShaking, setIsCommentShaking] = useState(false);
+  const lastActionTime = useRef<number>(0);
+
+  function checkCooldown(type: "vote" | "comment") {
+    const now = Date.now();
+    if (now - lastActionTime.current < 5000) {
+      if (type === "vote") {
+        setIsVoteShaking(true);
+        setTimeout(() => setIsVoteShaking(false), 400);
+      } else if (type === "comment") {
+        setIsCommentShaking(true);
+        setTimeout(() => setIsCommentShaking(false), 400);
+      }
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        navigator.vibrate(200);
+      }
+      return true;
+    }
+    lastActionTime.current = now;
+    return false;
+  }
   const [localIsAccepted, setLocalIsAccepted] = useState(answer.isAccepted);
   const [localAuthorReputation, setLocalAuthorReputation] = useState(answer.author.reputation);
 
@@ -90,7 +109,7 @@ export function AnswerCard({
       setCommentPage(page);
       setCommentsFetched(true);
     } catch (err: any) {
-      toast.error(err.message || "Could not load comments");
+      console.error(err.message || "Could not load comments");
     } finally {
       setIsLoadingComments(false);
     }
@@ -112,6 +131,8 @@ export function AnswerCard({
   }
 
   async function handleVote(dir: "up" | "down") {
+    if (checkCooldown("vote")) return;
+
     if (!session) {
       onAuthRequired({
         title: "Recognize good help",
@@ -185,7 +206,7 @@ export function AnswerCard({
         window.dispatchEvent(new CustomEvent('reputationUpdate', { detail: { userId: session.user.id, delta: -userDelta } }));
         adjustReputation(-userDelta);
       }
-      toast.error(err.message || "Failed to vote");
+      console.error(err.message || "Failed to vote");
     }
   }
 
@@ -219,7 +240,6 @@ export function AnswerCard({
 
       setLocalIsAccepted(data.isAccepted);
       onAccept(answer.id, data.isAccepted);
-      toast.success(data.isAccepted ? "Answer accepted!" : "Acceptance removed");
     } catch (err: any) {
       setLocalIsAccepted(prevAccepted);
       onAccept(answer.id, prevAccepted);
@@ -234,13 +254,15 @@ export function AnswerCard({
       }
       adjustReputation(rollbackUserRepDelta);
 
-      toast.error(err.message || "Failed to accept answer");
+      console.error(err.message || "Failed to accept answer");
     } finally {
       setIsAccepting(false);
     }
   }
 
   async function handlePostComment() {
+    if (checkCooldown("comment")) return;
+
     if (!session) {
       onAuthRequired({
         title: "Join the discussion",
@@ -284,7 +306,15 @@ export function AnswerCard({
         body: JSON.stringify({ parentId: answer.id, parentType: "answer", content: tempComment.content }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to post comment");
+      if (!res.ok) {
+        if (data.details) {
+          toast.error(data.error || "Inappropriate content", {
+            description: `Flagged for: ${data.details} (${data.confidence})`,
+          });
+          throw new Error("moderated");
+        }
+        throw new Error(data.error || "Failed to post comment");
+      }
 
       setLocalComments((prev) => prev.map(c => c.id === tempId ? data : c));
       setCommentsFetched(true);
@@ -293,7 +323,9 @@ export function AnswerCard({
       setLocalComments(prevComments);
       setLocalCommentCount(prevCount);
       setCommentBody(tempComment.content);
-      toast.error(err.message);
+      if (err.message !== "moderated") {
+        toast.error(err.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -302,16 +334,17 @@ export function AnswerCard({
   return (
     <div
       className={cn(
-        "rounded-xl p-3.5 sm:p-4 border border-gray-100 shadow-sm transition-all duration-200 relative bg-white"
+        "rounded-xl p-3.5 sm:p-4 border border-transparent shadow-sm transition-all duration-200 relative bg-white",
+        localIsAccepted ? "border-purple-600" : "border-gray-200"
       )}
     >
       {localIsAccepted && (
         <>
-          <div className="absolute -top-2 -left-2 text-green-600 z-10">
-            <SealCheckIcon size={20} weight="fill" />
+          <div className="absolute -top-1.5 -left-1.5 text-purple-600 z-10">
+            <SealCheckIcon size={20} weight="fill" className="bg-white rounded-4xl" />
           </div>
           {isAnswerAuthor && (
-            <div className="absolute top-0 right-30 bg-green-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-b-lg shadow-sm animate-in fade-in slide-in-from-top-1 duration-500">
+            <div className="absolute top-0 right-30 bg-purple-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-b-lg shadow-sm animate-in fade-in slide-in-from-top-1 duration-500">
               ANSWER ACCEPTED
             </div>
           )}
@@ -373,16 +406,16 @@ export function AnswerCard({
                   onClick={handleAccept}
                   disabled={isAccepting}
                   className={cn(
-                    "flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-1 py-0.5 rounded-md transition-all duration-200",
+                    "flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md transition-all duration-200",
                     localIsAccepted
-                      ? "text-green-600"
+                      ? "text-green-600 bg-green-600/10"
                       : "bg-gray-100 text-muted-foreground/60"
                   )}
                 >
                   {isAccepting ? (
                     <SpinnerGapIcon size={10} className="animate-spin" />
                   ) : (
-                    <CheckCircleIcon size={11} weight={localIsAccepted ? "fill" : "bold"} />
+                    <SealCheckIcon size={11} weight={localIsAccepted ? "fill" : "bold"} />
                   )}
                   <span className="hidden sm:inline">{localIsAccepted ? "Accepted" : "Accept"}</span>
                 </button>
@@ -390,7 +423,9 @@ export function AnswerCard({
             </div>
           </div>
 
-          <p className="text-[13px] sm:text-[14px] text-foreground/85 leading-[1.6] sm:leading-[1.75] mb-2.5 sm:mb-3 wrap-break-word">{answer.body}</p>
+          <p className="text-[13px] sm:text-[14px] text-foreground/85 leading-[1.6] sm:leading-[1.75] mb-2.5 sm:mb-3 wrap-break-word">
+            <LinkifiedText text={answer.body} />
+          </p>
 
           <button
             onClick={handleToggleComments}

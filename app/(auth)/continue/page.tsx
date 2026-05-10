@@ -7,13 +7,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRightIcon as ArrowRight,
   GoogleLogoIcon,
-  CheckCircleIcon as CheckCircle,
+  SealCheckIcon as CheckCircle,
   SpinnerIcon,
   ArrowCircleLeftIcon,
   ArrowsClockwiseIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription} from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   InputOTP,
   InputOTPGroup,
@@ -474,9 +474,9 @@ export default function ContinuePage() {
         </div>
       </div>
 
-      <AuthSidebar 
-        imageSrc={authImages[0]} 
-        side="right" 
+      <AuthSidebar
+        imageSrc={authImages[0]}
+        side="right"
         title="Welcome Back"
         subtitle="Continue your journey into the deepest discussions"
       />

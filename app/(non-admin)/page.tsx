@@ -14,13 +14,14 @@ import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Question } from "@/app/types/home.type";
-
 import { QuestionCard } from "@/components/app/HomeFeed/QuestionCard";
 import { AskQuestionModal } from "@/components/app/HomeFeed/AskQuestionCard";
 import { Button } from "@/components/ui/button";
 import { QuestionSkeleton } from "@/components/app/HomeFeed/QuestionSkeleton";
 import { AuthModal } from "@/components/app/AuthModal";
 import { useSession } from "@/app/lib/auth-client";
+import { useUser } from "@/context/UserContext";
+import { ReputationRestrictionModal } from "@/components/app/HomeFeed/ReputationRestrictionModal";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -56,6 +57,8 @@ export default function HomePage() {
   const debouncedSearch = useDebounce(searchQuery, 400);
 
   const [askOpen, setAskOpen] = useState(false);
+  const [repModalOpen, setRepModalOpen] = useState(false);
+  const { user: userProfile } = useUser();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -111,16 +114,29 @@ export default function HomePage() {
   }, [debouncedSearch, activeTab, fetchQuestions]);
 
   async function handleAskSubmit(data: { title: string; body: string; tags: string[] }) {
-    const res = await fetch("/api/questions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "Failed to post question");
-    toast.success("Question posted!", { description: "Your voice has been added." });
-    setQuestions((prev) => [json, ...prev]);
-    setPagination((prev) => ({ ...prev, totalItems: prev.totalItems + 1 }));
+    try {
+      const res = await fetch("/api/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        if (json.details) {
+          toast.error(json.error || "Inappropriate content", {
+            description: `Flagged for: ${json.details} (${json.confidence})`,
+          });
+          return;
+        }
+        throw new Error(json.error || "Failed to post question");
+      }
+      toast.success("Question posted!", { description: "Your voice has been added." });
+      setQuestions((prev) => [json, ...prev]);
+      setPagination((prev) => ({ ...prev, totalItems: prev.totalItems + 1 }));
+      setAskOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to post question");
+    }
   }
 
   return (
@@ -136,6 +152,13 @@ export default function HomePage() {
         open={askOpen}
         onClose={() => setAskOpen(false)}
         onSubmit={handleAskSubmit}
+      />
+
+      <ReputationRestrictionModal
+        open={repModalOpen}
+        onClose={() => setRepModalOpen(false)}
+        currentReputation={userProfile?.reputation ?? 0}
+        requiredReputation={100}
       />
 
       <AnimatePresence>
@@ -190,7 +213,7 @@ export default function HomePage() {
           </div>
         </motion.div>
 
-        <div className="flex items-center gap-1 mb-6 p-1 bg-gray-200/90 shadow-inner rounded-4xl w-full sm:w-fit relative overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 mb-6 p-1 bg-gray-200/50 shadow-inner rounded-4xl w-full sm:w-fit relative overflow-x-auto no-scrollbar">
           {(["trending", "newest", "ask"] as const).map((tab) => {
             const isActive = activeTab === (tab as SortTab);
             return (
@@ -204,6 +227,8 @@ export default function HomePage() {
                         description:
                           "Create an account to start your own debate and get expert insights from the community.",
                       });
+                    } else if ((userProfile?.reputation ?? 0) < 100) {
+                      setRepModalOpen(true);
                     } else {
                       setAskOpen(true);
                     }

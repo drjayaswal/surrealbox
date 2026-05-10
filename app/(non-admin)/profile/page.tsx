@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/app/lib/auth-client";
 import { apiRequest } from "@/app/lib/api-client";
 import { motion } from "framer-motion";
@@ -10,16 +10,15 @@ import {
   WarningIcon,
   EnvelopeIcon,
   CameraIcon,
-  CheckCircleIcon,
   SpinnerGapIcon,
   SealCheckIcon,
-  ClockIcon,
-  UserGearIcon,
 } from "@phosphor-icons/react";
-import { UniversalAvatar } from "@/components/app/Avatar";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Avatar } from "@/components/app/HomeFeed/Avatar";
+import { Author } from "@/app/types/home.type";
+import { toast } from "sonner";
 
 interface UserProfile {
   name?: string;
@@ -27,6 +26,7 @@ interface UserProfile {
   gender?: string;
   image?: string;
   bio?: string;
+  emailVerified?: boolean;
 }
 
 type SaveState = "idle" | "saving" | "success" | "error";
@@ -61,7 +61,7 @@ function SaveButton({ state, onClick, label = "Save Changes" }: { state: SaveSta
   const cfg = {
     idle: { text: label, cls: "", Icon: CheckIcon, spin: false },
     saving: { text: "Saving…", cls: "cursor-not-allowed", Icon: SpinnerGapIcon, spin: true },
-    success: { text: "Saved!", cls: "", Icon: CheckCircleIcon, spin: false },
+    success: { text: "Saved!", cls: "", Icon: SealCheckIcon, spin: false },
     error: { text: "Retry", cls: "", Icon: WarningIcon, spin: false },
   }[state];
 
@@ -97,6 +97,7 @@ export default function ProfilePage() {
       gender: user.gender ?? "",
       image: user.image ?? "",
       bio: user.bio ?? "",
+      emailVerified: user.emailVerified ?? "",
     });
   }, [user?.id]);
 
@@ -107,11 +108,19 @@ export default function ProfilePage() {
       if (r.success) {
         await refetch();
         setState("success");
+        toast.success("Profile updated!");
       } else {
         setState("error");
       }
-    } catch {
+    } catch (err: any) {
       setState("error");
+      if (err.data?.details) {
+        toast.error(err.data.error || "Inappropriate content", {
+          description: `Flagged for: ${err.data.details} (${err.data.confidence})`,
+        });
+      } else {
+        toast.error(err.message || "Failed to update profile");
+      }
     } finally {
       setTimeout(() => setState("idle"), 2500);
     }
@@ -175,11 +184,7 @@ export default function ProfilePage() {
                 <div className="p-5 flex flex-col items-center text-center relative z-10">
                   <div className="relative mb-4">
                     {!userForm.image ? (
-                      <UniversalAvatar
-                        name={userForm.name || "User"}
-                        gender={(userForm.gender as any) || "other"}
-                        size={100}
-                      />
+                      <Avatar author={userForm as Author} size={90} gender={userForm.gender} />
                     ) : (
                       <img
                         src={userForm.image}
@@ -187,7 +192,7 @@ export default function ProfilePage() {
                         className="w-24 h-24 rounded-full object-cover bg-black/5"
                       />
                     )}
-                    <div className="absolute -bottom-1 -right-1 h-8 w-8 rounded-2xl bg-white text-main hover:bg-gray-100 cursor-pointer shadow-lg flex items-center justify-center transition-all active:scale-90">
+                    <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-2xl bg-white/10 backdrop-blur-md text-main hover:bg-gray-100 cursor-pointer shadow-lg flex items-center justify-center transition-all active:scale-90">
                       <CameraIcon size={14} weight="bold" />
                     </div>
                   </div>
@@ -260,7 +265,7 @@ export default function ProfilePage() {
                       ))}
                     </div>
                   </Field>
-                  <Field label="About Me" hint="Tell the community about yourself">
+                  <Field label="About Me">
                     <textarea
                       value={userForm.bio ?? ""}
                       onChange={(e) => setUserForm({ ...userForm, bio: e.target.value })}

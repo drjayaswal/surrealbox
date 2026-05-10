@@ -30,14 +30,14 @@ export function slugify(text: string) {
 
 export function getUserColor(name: string) {
   const colors = [
-    "hsl(220, 75%, 55%)", // Vibrant Blue
-    "hsl(280, 70%, 60%)", // Vibrant Indigo
-    "hsl(340, 75%, 60%)", // Vibrant Pink
-    "hsl(10, 80%, 60%)",  // Vibrant Red-Orange
-    "hsl(160, 65%, 45%)", // Vibrant Emerald
-    "hsl(190, 80%, 45%)", // Vibrant Cyan
-    "hsl(45, 90%, 50%)",  // Vibrant Amber
-    "hsl(210, 85%, 55%)", // Vibrant Sky
+    "hsl(220, 75%, 55%)",
+    "hsl(280, 70%, 60%)",
+    "hsl(340, 75%, 60%)",
+    "hsl(10, 80%, 60%)",
+    "hsl(160, 65%, 45%)", 
+    "hsl(190, 80%, 45%)",
+    "hsl(45, 90%, 50%)",
+    "hsl(210, 85%, 55%)",
   ];
 
   let hash = 0;

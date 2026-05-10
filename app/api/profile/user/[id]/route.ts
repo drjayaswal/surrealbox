@@ -4,6 +4,7 @@ import { db } from "@/app/db/index";
 import { user as userTable } from "@/app/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
+import { checkContent } from "@/lib/moderator";
 
 export async function PATCH(
   req: NextRequest,
@@ -19,6 +20,18 @@ export async function PATCH(
   try {
     const body = await req.json();
     const { name, gender, image, bio } = body;
+
+    // Content Moderation for Bio
+    if (bio && bio.trim()) {
+      const modResult = await checkContent(bio);
+      if (!modResult.isAppropriate) {
+        return NextResponse.json({
+          error: "Inappropriate bio detected",
+          details: modResult.message,
+          confidence: modResult.confidence
+        }, { status: 400 });
+      }
+    }
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
