@@ -13,8 +13,6 @@ export function getOTPEmailHtml({
         ? "Use the following code to confirm your email change."
         : "Use the following code to verify your account.";
 
-  const logo = "https://surrealbox.vercel.app/assets/invert-logo.png";
-
   return `
 <!doctype html>
 <html lang="en">
@@ -186,7 +184,7 @@ export function getOTPEmailHtml({
         <div class="header">
           <div class="logo-wrap">
             <img
-              src="${logo}"
+              src="https://surrealbox.vercel.app/assets/invert-logo.png"
               alt="Logo"
               onerror="this.style.display = 'none'"
             />
