@@ -14,9 +14,12 @@ import { useState, useEffect } from "react";
 import { authClient } from "@/app/lib/auth-client";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "@/context/UserContext";
+import { ReputationBadge } from "./HomeFeed/ReputationBadge";
 
 const Navbar = () => {
   const { data: session } = authClient.useSession();
+  const { user: profile } = useUser();
   const [isSigningOut, setIsSignOutLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -131,18 +134,25 @@ const Navbar = () => {
               })}
             </nav>
             {user && (
-              <button
-                onClick={handleSignOut}
-                disabled={isSigningOut}
-                className="ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors pointer-events-auto cursor-pointer"
-                title="Sign Out"
-              >
-                {isSigningOut ? (
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <SignOutIcon size={14} weight="bold" className="text-white" />
+              <div className="flex items-center gap-3">
+                {profile && (
+                  <div className="hidden sm:flex items-center">
+                    <ReputationBadge reputation={profile.reputation} className="bg-white/10 text-white border-white/20" />
+                  </div>
                 )}
-              </button>
+                <button
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 transition-colors pointer-events-auto cursor-pointer"
+                  title="Sign Out"
+                >
+                  {isSigningOut ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <SignOutIcon size={14} weight="bold" className="text-white" />
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </div>

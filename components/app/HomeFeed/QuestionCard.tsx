@@ -18,13 +18,12 @@ import {
   LightbulbIcon,
   TagIcon,
 } from "@phosphor-icons/react";
+import { ActionMenu } from "./ActionMenu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useEffect, useState, useRef } from "react";
 import { useSession } from "@/app/lib/auth-client";
-import { useUser } from "@/context/UserContext";
-import { ReputationBadge } from "./ReputationBadge";
 import { LinkifiedText } from "./LinkifiedText";
 
 export function QuestionCard({
@@ -37,9 +36,8 @@ export function QuestionCard({
   onAuthRequired: (config?: { title: string; description: string }) => void;
 }) {
   const { data: session } = useSession();
-  const { user, adjustReputation } = useUser();
   const isAuthor = session?.user?.id === question.authorId;
-
+  const [showMenu, setShowMenu] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
   const [showTags, setShowTags] = useState(false);
@@ -74,6 +72,7 @@ export function QuestionCard({
   const [isCommentShaking, setIsCommentShaking] = useState(false);
   const lastActionTime = useRef<number>(0);
 
+
   function checkCooldown(type: "vote" | "answer" | "comment") {
     const now = Date.now();
     if (now - lastActionTime.current < 5000) {
@@ -87,9 +86,11 @@ export function QuestionCard({
         setIsCommentShaking(true);
         setTimeout(() => setIsCommentShaking(false), 400);
       }
-      toast.error(`Please wait ${Math.ceil((5000 - (now - lastActionTime.current)) / 1000)}s before next action`, {
-        id: "cooldown-toast",
-      });
+      /*
+            toast.error(`Please wait ${Math.ceil((5000 - (now - lastActionTime.current)) / 1000)}s before next action`, {
+              id: "cooldown-toast",
+            });
+      */
       if (typeof navigator !== "undefined" && navigator.vibrate) {
         navigator.vibrate(200);
       }
@@ -161,7 +162,7 @@ export function QuestionCard({
       setCommentPage(page);
       setCommentsFetched(true);
     } catch (err: any) {
-      toast.error(err.message || "Could not load comments");
+      // toast.error(err.message || "Could not load comments");
     } finally {
       setIsLoadingComments(false);
     }
@@ -181,7 +182,7 @@ export function QuestionCard({
       setAnswerPage(page);
       setAnswersFetched(true);
     } catch (err: any) {
-      toast.error(err.message || "Could not load answers");
+      // toast.error(err.message || "Could not load answers");
     } finally {
       setIsLoadingAnswers(false);
     }
@@ -306,7 +307,6 @@ export function QuestionCard({
     }
     if (userDelta !== 0 && session?.user?.id) {
       window.dispatchEvent(new CustomEvent('reputationUpdate', { detail: { userId: session.user.id, delta: userDelta } }));
-      adjustReputation(userDelta);
     }
 
     try {
@@ -325,9 +325,8 @@ export function QuestionCard({
       }
       if (userDelta !== 0 && session?.user?.id) {
         window.dispatchEvent(new CustomEvent('reputationUpdate', { detail: { userId: session.user.id, delta: -userDelta } }));
-        adjustReputation(-userDelta);
       }
-      toast.error(err.message || "Failed to vote");
+      // toast.error(err.message || "Failed to vote");
     }
   }
 
@@ -355,6 +354,10 @@ export function QuestionCard({
         gender: "other",
       },
       content: commentBody.trim(),
+      score: 0,
+      userVote: null,
+      replyToId: null,
+      replyCount: 0,
       createdAt: new Date().toISOString(),
     };
 
@@ -375,9 +378,11 @@ export function QuestionCard({
       const data = await res.json();
       if (!res.ok) {
         if (data.details) {
+          /*
           toast.error(data.error || "Inappropriate content", {
             description: `Flagged for: ${data.details} (${data.confidence})`,
           });
+          */
           throw new Error("moderated");
         }
         throw new Error(data.error || "Failed to post comment");
@@ -385,13 +390,13 @@ export function QuestionCard({
 
       setLocalComments((prev) => prev.map(c => c.id === tempId ? data : c));
       setCommentsFetched(true);
-      toast.success("Comment added!");
+      // toast.success("Comment added!");
     } catch (err: any) {
       setLocalComments(prevComments);
       setLocalCommentCount(prevCount);
       setCommentBody(tempComment.content);
       if (err.message !== "moderated") {
-        toast.error(err.message);
+        // toast.error(err.message);
       }
     } finally {
       setIsSubmittingComment(false);
@@ -452,9 +457,11 @@ export function QuestionCard({
       const data = await res.json();
       if (!res.ok) {
         if (data.details) {
+          /*
           toast.error(data.error || "Inappropriate content", {
             description: `Flagged for: ${data.details} (${data.confidence})`,
           });
+          */
           throw new Error("moderated");
         }
         throw new Error(data.error || "Failed to post answer");
@@ -462,16 +469,33 @@ export function QuestionCard({
 
       setLocalAnswers((prev) => prev.map(a => a.id === tempId ? data : a));
       setAnswersFetched(true);
-      toast.success("Answer posted!");
+      // toast.success("Answer posted!");
     } catch (err: any) {
       setLocalAnswers(prevAnswers);
       setLocalAnswerCount(prevCount);
       setAnswerBody(tempAnswer.body);
       if (err.message !== "moderated") {
-        toast.error(err.message);
+        // toast.error(err.message);
       }
     } finally {
       setIsSubmittingAnswer(false);
+    }
+  }
+
+  async function handleFlag() {
+    setShowMenu(false);
+    if (!session) {
+      onAuthRequired({
+        title: "Flag content",
+        description: "Sign in to flag inappropriate content for review.",
+      });
+      return;
+    }
+    try {
+      await fetch(`/api/questions/${question.id}/flag`, { method: "POST" });
+      // toast.success("Question flagged for review. Thank you.");
+    } catch {
+      // toast.error("Failed to flag question.");
     }
   }
 
@@ -547,10 +571,21 @@ export function QuestionCard({
                 {timeAgo(question.createdAt)}
               </span>
               <div className="ml-auto flex items-center gap-1.5 shrink-0">
-                <ReputationBadge reputation={localAuthorReputation} />
-                <span className="text-[9px] sm:text-[10.5px] text-white bg-blue-600 px-1.5 sm:px-2 py-0.5 rounded-md">
-                  {localViewCount.toLocaleString()}<span className="hidden md:inline ml-1">views</span>
+                <span className="text-[9px] sm:text-[10.5px] text-black/50 px-1.5 sm:px-2 py-0.5 rounded-md">
+                  <span>
+                    {new Intl.NumberFormat('en-US', {
+                      notation: 'compact',
+                      compactDisplay: 'short',
+                      maximumFractionDigits: 1
+                    }).format(localViewCount)}
+                  </span>
+                  <span className="hidden md:inline ml-1">views</span>
                 </span>
+                <ActionMenu
+                  author={question.author}
+                  onFlag={handleFlag}
+                  verifiedLabel="Verified"
+                />
               </div>
             </div>
             <div className="flex items-start justify-between mb-4 gap-2">
@@ -652,7 +687,7 @@ export function QuestionCard({
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="overflow-hidden"
+                  className=""
                 >
                   <div className="py-4">
                     <div className="">
@@ -672,7 +707,7 @@ export function QuestionCard({
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="overflow-hidden"
+                  className=""
                 >
                   <div className="py-4">
                     <div className="flex flex-wrap gap-2">
@@ -697,7 +732,7 @@ export function QuestionCard({
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="overflow-hidden"
+                  className="mt-2 ml-4 sm:ml-5 pl-4 sm:pl-5 border-l border-gray-100"
                 >
                   <div className="py-4">
                     <motion.div
@@ -740,7 +775,13 @@ export function QuestionCard({
                       ) : (
                         <>
                           {localComments.map((c) => (
-                            <CommentItem key={c.id} comment={c} />
+                            <CommentItem
+                              key={c.id}
+                              comment={c}
+                              parentId={question.id}
+                              parentType="question"
+                              onAuthRequired={onAuthRequired}
+                            />
                           ))}
                           {isLoadingComments && (
                             <div className="flex justify-center py-4">
@@ -772,7 +813,7 @@ export function QuestionCard({
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="overflow-hidden"
+                  className="mt-2 ml-4 sm:ml-5 pl-4 sm:pl-5 border-l border-gray-100"
                 >
                   <div className="py-4">
                     <motion.div

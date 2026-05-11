@@ -60,6 +60,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [session?.user?.id, isSessionLoading]);
 
+  useEffect(() => {
+    const handleRep = (e: CustomEvent<{ userId: string, delta: number }>) => {
+      if (user && e.detail.userId === user.id) {
+        setUser(prev => prev ? { ...prev, reputation: prev.reputation + e.detail.delta } : prev);
+      }
+    };
+    window.addEventListener('reputationUpdate', handleRep as EventListener);
+    return () => window.removeEventListener('reputationUpdate', handleRep as EventListener);
+  }, [user?.id]);
+
   function adjustReputation(delta: number) {
     setUser((prev) => prev ? { ...prev, reputation: prev.reputation + delta } : prev);
   }

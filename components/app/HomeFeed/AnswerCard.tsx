@@ -15,11 +15,10 @@ import {
   SpinnerGapIcon,
   PlusCircleIcon,
 } from "@phosphor-icons/react";
+import { ActionMenu } from "./ActionMenu";
 import { Input } from "@/components/ui/input";
 import { useSession } from "@/app/lib/auth-client";
 import { useState, useEffect, useRef } from "react";
-import { useUser } from "@/context/UserContext";
-import { ReputationBadge } from "./ReputationBadge";
 import { Button } from "@/components/ui/button";
 import { LinkifiedText } from "./LinkifiedText";
 import { toast } from "sonner";
@@ -36,7 +35,7 @@ export function AnswerCard({
   onAccept: (answerId: string, isAccepted: boolean) => void;
 }) {
   const { data: session } = useSession();
-  const { adjustReputation } = useUser();
+  const [showMenu, setShowMenu] = useState(false);
   const isAnswerAuthor = session?.user?.id === answer.authorId;
   const isQuestionAuthor = session?.user?.id === questionAuthorId;
 
@@ -49,6 +48,7 @@ export function AnswerCard({
   const [isVoteShaking, setIsVoteShaking] = useState(false);
   const [isCommentShaking, setIsCommentShaking] = useState(false);
   const lastActionTime = useRef<number>(0);
+
 
   function checkCooldown(type: "vote" | "comment") {
     const now = Date.now();
@@ -185,7 +185,6 @@ export function AnswerCard({
     }
     if (userDelta !== 0 && session?.user?.id) {
       window.dispatchEvent(new CustomEvent('reputationUpdate', { detail: { userId: session.user.id, delta: userDelta } }));
-      adjustReputation(userDelta);
     }
 
     try {
@@ -204,7 +203,6 @@ export function AnswerCard({
       }
       if (userDelta !== 0 && session?.user?.id) {
         window.dispatchEvent(new CustomEvent('reputationUpdate', { detail: { userId: session.user.id, delta: -userDelta } }));
-        adjustReputation(-userDelta);
       }
       console.error(err.message || "Failed to vote");
     }
@@ -219,7 +217,6 @@ export function AnswerCard({
     setLocalIsAccepted(nextAccepted);
     onAccept(answer.id, nextAccepted);
 
-    // Adjust reputation: Answer author +15, Question author (me) +2
     const repDelta = nextAccepted ? 15 : -15;
     const userRepDelta = nextAccepted ? 2 : -2;
 
@@ -227,7 +224,6 @@ export function AnswerCard({
     if (session?.user?.id) {
       window.dispatchEvent(new CustomEvent('reputationUpdate', { detail: { userId: session.user.id, delta: userRepDelta } }));
     }
-    adjustReputation(userRepDelta);
 
     setIsAccepting(true);
 
@@ -244,7 +240,6 @@ export function AnswerCard({
       setLocalIsAccepted(prevAccepted);
       onAccept(answer.id, prevAccepted);
 
-      const repDelta = prevAccepted ? 15 : -15; // To rollback, we apply the inverse. Actually, if we accepted, repDelta was 15, so to rollback we want -15.
       const rollbackRepDelta = nextAccepted ? -15 : 15;
       const rollbackUserRepDelta = nextAccepted ? -2 : 2;
 
@@ -252,7 +247,6 @@ export function AnswerCard({
       if (session?.user?.id) {
         window.dispatchEvent(new CustomEvent('reputationUpdate', { detail: { userId: session.user.id, delta: rollbackUserRepDelta } }));
       }
-      adjustReputation(rollbackUserRepDelta);
 
       console.error(err.message || "Failed to accept answer");
     } finally {
@@ -288,6 +282,10 @@ export function AnswerCard({
         gender: "other",
       },
       content: commentBody.trim(),
+      score: 0,
+      userVote: null,
+      replyToId: null,
+      replyCount: 0,
       createdAt: new Date().toISOString(),
     };
 
@@ -308,9 +306,11 @@ export function AnswerCard({
       const data = await res.json();
       if (!res.ok) {
         if (data.details) {
+          /*
           toast.error(data.error || "Inappropriate content", {
             description: `Flagged for: ${data.details} (${data.confidence})`,
           });
+          */
           throw new Error("moderated");
         }
         throw new Error(data.error || "Failed to post comment");
@@ -318,16 +318,33 @@ export function AnswerCard({
 
       setLocalComments((prev) => prev.map(c => c.id === tempId ? data : c));
       setCommentsFetched(true);
-      toast.success("Comment added!");
+      // toast.success("Comment added!");
     } catch (err: any) {
       setLocalComments(prevComments);
       setLocalCommentCount(prevCount);
       setCommentBody(tempComment.content);
       if (err.message !== "moderated") {
-        toast.error(err.message);
+        // toast.error(err.message);
       }
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleFlag() {
+    setShowMenu(false);
+    if (!session) {
+      onAuthRequired({
+        title: "Flag content",
+        description: "Sign in to flag inappropriate content for review.",
+      });
+      return;
+    }
+    try {
+      await fetch(`/api/answers/${answer.id}/flag`, { method: "POST" });
+      // toast.success("Answer flagged for review. Thank you.");
+    } catch {
+      // toast.error("Failed to flag answer.");
     }
   }
 
@@ -335,7 +352,7 @@ export function AnswerCard({
     <div
       className={cn(
         "rounded-xl p-3.5 sm:p-4 border border-transparent shadow-sm transition-all duration-200 relative bg-white",
-        localIsAccepted ? "border-purple-600" : "border-gray-200"
+        localIsAccepted ? "border-purple-600" : "border-gray-100"
       )}
     >
       {localIsAccepted && (
@@ -355,8 +372,10 @@ export function AnswerCard({
         <motion.div
           animate={isVoteShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
           transition={{ duration: 0.4 }}
-          className="flex flex-col items-center gap-0.5 pt-0.5"
+          className="flex flex-col items-center gap-0.5 pt-0.5 relative"
         >
+          {/* Timeline connecting line */}
+          <div className="absolute top-8 bottom-0 w-px bg-gray-50 left-1/2 -translate-x-1/2 -z-10" />
           <button
             onClick={() => handleVote("up")}
             className={cn(
@@ -399,8 +418,7 @@ export function AnswerCard({
             <span className="text-[11px] sm:text-[12.5px] font-semibold text-primary truncate max-w-[100px] sm:max-w-none">{answer.author.name}</span>
             <span className="text-[10px] text-muted-foreground/50">·</span>
             <span className="text-[10.5px] sm:text-[11.5px] text-muted-foreground/60">{timeAgo(answer.createdAt)}</span>
-            <div className="ml-auto flex items-center gap-1 shrink-0">
-              <ReputationBadge reputation={localAuthorReputation} />
+            <div className="ml-auto flex items-center gap-1.5 shrink-0">
               {isQuestionAuthor && (
                 <button
                   onClick={handleAccept}
@@ -420,6 +438,11 @@ export function AnswerCard({
                   <span className="hidden sm:inline">{localIsAccepted ? "Accepted" : "Accept"}</span>
                 </button>
               )}
+              <ActionMenu
+                author={answer.author}
+                onFlag={handleFlag}
+                verifiedLabel="Verified Expert"
+              />
             </div>
           </div>
 
@@ -457,7 +480,7 @@ export function AnswerCard({
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="overflow-hidden"
+                className=""
               >
                 <div className="px-3 pt-1 pb-1 mb-2">
                   {isLoadingComments && localComments.length === 0 ? (
@@ -469,7 +492,13 @@ export function AnswerCard({
                   ) : (
                     <>
                       {localComments.map((c) => (
-                        <CommentItem key={c.id} comment={c} />
+                        <CommentItem
+                          key={c.id}
+                          comment={c}
+                          parentId={answer.id}
+                          parentType="answer"
+                          onAuthRequired={onAuthRequired}
+                        />
                       ))}
                       {isLoadingComments && (
                         <div className="flex justify-center py-3">

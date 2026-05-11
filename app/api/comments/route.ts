@@ -3,7 +3,7 @@ import { auth } from "@/app/lib/auth";
 import { db } from "@/app/db/index";
 import { comments, answers, questions } from "@/app/db/schema";
 import { headers } from "next/headers";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, isNull } from "drizzle-orm";
 import { checkContent } from "@/lib/moderator";
 
 export async function GET(req: NextRequest) {
@@ -22,9 +22,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    if (!["question", "answer"].includes(parentType)) {
+    if (!["question", "answer", "comment"].includes(parentType)) {
       return NextResponse.json(
-        { error: "parentType must be 'question' or 'answer'" },
+        { error: "parentType must be 'question', 'answer', or 'comment'" },
         { status: 400 }
       );
     }
@@ -32,17 +32,14 @@ export async function GET(req: NextRequest) {
     const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user) {
-      console.warn(
-        `[COMMENTS_GET] Unauthenticated request for parentId=${parentId} parentType=${parentType}`
-      );
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const list = await db.query.comments.findMany({
-      where: (comments, { eq, and }) =>
+      where: (c, { eq, and }) =>
         and(
-          eq(comments.parentId, parentId),
-          eq(comments.parentType, parentType)
+          eq(c.parentId, parentId),
+          eq(c.parentType, parentType)
         ),
       with: { author: true },
       orderBy: [desc(comments.createdAt)],
@@ -53,19 +50,29 @@ export async function GET(req: NextRequest) {
     const hasNextPage = list.length > limit;
     const items = hasNextPage ? list.slice(0, limit) : list;
 
-    console.info(
-      `[COMMENTS_GET] parentId=${parentId} parentType=${parentType} page=${page} returned=${items.length} hasNext=${hasNextPage} user=${session.user.id}`
-    );
+    let userVoteMap: Record<string, "up" | "down"> = {};
+    if (items.length > 0 && session?.user) {
+      const commentIds = items.map((c) => c.id);
+      const { votes } = await import("@/app/db/schema");
+      const userVotes = await db.query.votes.findMany({
+        where: (v, { and, eq, inArray }) =>
+          and(eq(v.userId, session.user.id), inArray(v.votableId, commentIds)),
+      });
+      for (const v of userVotes) {
+        userVoteMap[v.votableId] = v.direction as "up" | "down";
+      }
+    }
 
-    return NextResponse.json({ items, nextPage: hasNextPage ? page + 1 : null });
+    const itemsWithVotes = items.map((c) => ({
+      ...c,
+      score: c.score ?? 0,
+      replyCount: c.replyCount ?? 0,
+      replyToId: c.replyToId ?? null,
+      userVote: userVoteMap[c.id] ?? null,
+    }));
+
+    return NextResponse.json({ items: itemsWithVotes, nextPage: hasNextPage ? page + 1 : null });
   } catch (error: any) {
-    console.error("[COMMENTS_GET] Unhandled error:", {
-      message: error.message,
-      stack: error.stack,
-      parentId,
-      parentType,
-      page,
-    });
     return NextResponse.json(
       { error: "Failed to fetch comments. Please try again later." },
       { status: 500 }
@@ -80,7 +87,6 @@ export async function POST(req: NextRequest) {
     sessionData = await auth.api.getSession({ headers: await headers() });
 
     if (!sessionData?.user) {
-      console.warn("[COMMENTS_POST] Unauthenticated attempt to post comment");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -90,11 +96,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 
-    const { parentId, parentType, content } = body;
+    const { parentId, parentType, content, replyToId } = body;
 
-    // Content Moderation
     const modResult = await checkContent(content || "");
-    console.log(modResult)
     if (!modResult.isAppropriate) {
       return NextResponse.json({
         error: "Inappropriate content detected",
@@ -110,9 +114,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!["question", "answer"].includes(parentType)) {
+    if (!["question", "answer", "comment"].includes(parentType)) {
       return NextResponse.json(
-        { error: "parentType must be 'question' or 'answer'" },
+        { error: "parentType must be 'question', 'answer', or 'comment'" },
         { status: 400 }
       );
     }
@@ -132,13 +136,17 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Answer not found" }, { status: 404 });
       }
       if (answer.authorId === sessionData.user.id) {
-        console.warn(
-          `[COMMENTS_POST] User=${sessionData.user.id} attempted to comment on own answer id=${parentId}`
-        );
         return NextResponse.json(
           { error: "You cannot comment on your own answer" },
           { status: 403 }
         );
+      }
+    } else if (parentType === "comment") {
+      const parentComment = await db.query.comments.findFirst({
+        where: eq(comments.id, parentId),
+      });
+      if (!parentComment) {
+        return NextResponse.json({ error: "Comment not found" }, { status: 404 });
       }
     }
 
@@ -149,6 +157,7 @@ export async function POST(req: NextRequest) {
         parentType,
         content: content.trim(),
         authorId: sessionData.user.id,
+        replyToId: replyToId || null,
       })
       .returning();
 
@@ -157,11 +166,16 @@ export async function POST(req: NextRequest) {
         .update(questions)
         .set({ commentCount: sql`${questions.commentCount} + 1` })
         .where(eq(questions.id, parentId));
-    } else {
+    } else if (parentType === "answer") {
       await db
         .update(answers)
         .set({ commentCount: sql`${answers.commentCount} + 1` })
         .where(eq(answers.id, parentId));
+    } else if (parentType === "comment") {
+      await db
+        .update(comments)
+        .set({ replyCount: sql`${comments.replyCount} + 1` })
+        .where(eq(comments.id, parentId));
     }
 
     const fullComment = await db.query.comments.findFirst({
@@ -170,24 +184,20 @@ export async function POST(req: NextRequest) {
     });
 
     if (!fullComment) {
-      console.error("[COMMENTS_POST] Failed to re-fetch comment after insert:", newComment.id);
       return NextResponse.json(
         { error: "Comment created but could not be retrieved. Please refresh." },
         { status: 500 }
       );
     }
 
-    console.info(
-      `[COMMENTS_POST] New comment id=${fullComment.id} on ${parentType}=${parentId} by user=${sessionData.user.id}`
-    );
-
-    return NextResponse.json(fullComment, { status: 201 });
+    return NextResponse.json({
+      ...fullComment,
+      score: fullComment.score ?? 0,
+      replyCount: fullComment.replyCount ?? 0,
+      replyToId: fullComment.replyToId ?? null,
+      userVote: null,
+    }, { status: 201 });
   } catch (error: any) {
-    console.error("[COMMENTS_POST] Unhandled error:", {
-      message: error.message,
-      stack: error.stack,
-      userId: sessionData?.user?.id ?? "unknown",
-    });
     return NextResponse.json(
       { error: "Failed to post comment. Please try again later." },
       { status: 500 }

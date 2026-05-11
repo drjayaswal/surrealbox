@@ -16,6 +16,10 @@ export interface Comment {
   authorId: string;
   author: Author;
   content: string;
+  score: number;
+  userVote: VoteDirection;
+  replyToId: string | null;
+  replyCount: number;
   createdAt: string;
 }
 

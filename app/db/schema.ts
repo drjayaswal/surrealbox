@@ -12,20 +12,9 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-/**
- * --- ENUMS ---
- * Shared enumeration types used across various tables to ensure data integrity
- * and provide a standardized set of values for roles, statuses, and interactions.
- */
 export const voteDirectionEnum = pgEnum("vote_direction", ["up", "down"]);
 export const accountStatusEnum = pgEnum("account_status", ["active", "suspended"]);
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
-
-/**
- * --- CORE USER & AUTHENTICATION TABLES ---
- * These tables manage user identity, security sessions, and third-party 
- * account linkages (OAuth). Based on the Better-Auth standard structure.
- */
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -80,16 +69,6 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updatedAt"),
 });
 
-/**
- * --- COMMUNITY & Q&A LOGIC TABLES ---
- * The core domain entities for Surrealbox. These tables handle the lifecycle
- * of questions, expert answers, and community discussions.
- */
-
-/**
- * Questions: The primary unit of engagement.
- * Includes denormalized counts for performance (trending feeds/pagination).
- */
 export const questions = pgTable("questions", {
   id: uuid("id").defaultRandom().primaryKey(),
   authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
@@ -108,10 +87,6 @@ export const questions = pgTable("questions", {
   index("idx_questions_slug").on(table.slug),
 ]);
 
-/**
- * Answers: Expert responses to questions.
- * Gated by authorship (users cannot answer their own questions).
- */
 export const answers = pgTable("answers", {
   id: uuid("id").defaultRandom().primaryKey(),
   questionId: uuid("question_id").references(() => questions.id, { onDelete: "cascade" }),
@@ -126,10 +101,6 @@ export const answers = pgTable("answers", {
   index("idx_answers_question_id").on(table.questionId),
 ]);
 
-/**
- * Votes: Polymorphic engagement tracking.
- * Maps users to either Questions or Answers via votableId/votableType.
- */
 export const votes = pgTable("votes", {
   userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
   votableId: uuid("votable_id").notNull(),
@@ -156,21 +127,47 @@ export const comments = pgTable("comments", {
   authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
   parentId: uuid("parent_id").notNull(),
   parentType: varchar("parent_type", { length: 20 }).notNull(),
+  replyToId: uuid("reply_to_id"),
   content: text("content").notNull(),
+  score: integer("score").default(0),
+  replyCount: integer("reply_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_comments_parent").on(table.parentId),
+  index("idx_comments_reply_to").on(table.replyToId),
 ]);
 
-/**
- * --- RELATION DEFINITIONS ---
- * Sophisticated Drizzle ORM relations for easy querying (with.findMany).
- */
+export const commentFlags = pgTable("comment_flags", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  commentId: uuid("comment_id").references(() => comments.id, { onDelete: "cascade" }).notNull(),
+  reportedBy: text("reported_by").references(() => user.id, { onDelete: "set null" }),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_comment_flags_comment").on(table.commentId),
+]);
 
-/**
- * Vote Relations: Handles the polymorphic mapping of votes to their targets.
- */
+export const answerFlags = pgTable("answer_flags", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  answerId: uuid("answer_id").references(() => answers.id, { onDelete: "cascade" }).notNull(),
+  reportedBy: text("reported_by").references(() => user.id, { onDelete: "set null" }),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_answer_flags_answer").on(table.answerId),
+]);
+
+export const questionFlags = pgTable("question_flags", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  questionId: uuid("question_id").references(() => questions.id, { onDelete: "cascade" }).notNull(),
+  reportedBy: text("reported_by").references(() => user.id, { onDelete: "set null" }),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_question_flags_question").on(table.questionId),
+]);
+
 export const voteRelations = relations(votes, ({ one }) => ({
   user: one(user, {
     fields: [votes.userId],
@@ -188,9 +185,6 @@ export const voteRelations = relations(votes, ({ one }) => ({
   }),
 }));
 
-/**
- * User Relations: Aggregates all user-generated content.
- */
 export const userRelations = relations(user, ({ many }) => ({
   questions: many(questions),
   answers: many(answers),
@@ -201,9 +195,6 @@ export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
 }));
 
-/**
- * Question Relations: Maps a question to its author, answers, and social interactions.
- */
 export const questionRelations = relations(questions, ({ one, many }) => ({
   author: one(user, { fields: [questions.authorId], references: [user.id] }),
   answers: many(answers),
@@ -212,9 +203,6 @@ export const questionRelations = relations(questions, ({ one, many }) => ({
   views: many(questionViews),
 }));
 
-/**
- * Answer Relations: Maps an answer to its parent question, author, and nested comments.
- */
 export const answerRelations = relations(answers, ({ one, many }) => ({
   question: one(questions, { fields: [answers.questionId], references: [questions.id] }),
   author: one(user, { fields: [answers.authorId], references: [user.id] }),
@@ -222,10 +210,7 @@ export const answerRelations = relations(answers, ({ one, many }) => ({
   votes: many(votes, { relationName: "answerVotes" }),
 }));
 
-/**
- * Comment Relations: Maps a comment to its author and polymorphic parent.
- */
-export const commentRelations = relations(comments, ({ one }) => ({
+export const commentRelations = relations(comments, ({ one, many }) => ({
   author: one(user, {
     fields: [comments.authorId],
     references: [user.id],
@@ -240,4 +225,26 @@ export const commentRelations = relations(comments, ({ one }) => ({
     references: [answers.id],
     relationName: "answerComments",
   }),
+  replies: many(comments, { relationName: "commentReplies" }),
+  replyTo: one(comments, {
+    fields: [comments.replyToId],
+    references: [comments.id],
+    relationName: "commentReplies",
+  }),
+  flags: many(commentFlags),
+}));
+
+export const answerFlagRelations = relations(answerFlags, ({ one }) => ({
+  answer: one(answers, { fields: [answerFlags.answerId], references: [answers.id] }),
+  reporter: one(user, { fields: [answerFlags.reportedBy], references: [user.id] }),
+}));
+
+export const questionFlagRelations = relations(questionFlags, ({ one }) => ({
+  question: one(questions, { fields: [questionFlags.questionId], references: [questions.id] }),
+  reporter: one(user, { fields: [questionFlags.reportedBy], references: [user.id] }),
+}));
+
+export const commentFlagRelations = relations(commentFlags, ({ one }) => ({
+  comment: one(comments, { fields: [commentFlags.commentId], references: [comments.id] }),
+  reporter: one(user, { fields: [commentFlags.reportedBy], references: [user.id] }),
 }));

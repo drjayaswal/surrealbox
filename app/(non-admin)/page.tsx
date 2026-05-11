@@ -227,8 +227,6 @@ export default function HomePage() {
                         description:
                           "Create an account to start your own debate and get expert insights from the community.",
                       });
-                    } else if ((userProfile?.reputation ?? 0) < 100) {
-                      setRepModalOpen(true);
                     } else {
                       setAskOpen(true);
                     }
