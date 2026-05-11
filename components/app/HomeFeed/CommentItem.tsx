@@ -307,13 +307,15 @@ export function CommentItem({
             </span>
           </div>
 
-          <ActionMenu
-            author={comment.author}
-            onFlag={handleFlag}
-            verifiedLabel="Verified Account"
-            buttonClassName="p-0.5 sm:p-1"
-            dropdownClassName="w-[160px] sm:w-[190px]"
-          />
+          {session && (
+            <ActionMenu
+              author={comment.author}
+              onFlag={handleFlag}
+              verifiedLabel="Verified Account"
+              buttonClassName="p-0.5 sm:p-1"
+              dropdownClassName="w-[160px] sm:w-[190px]"
+            />
+          )}
         </div>
 
         <div className="text-[10.5px] sm:text-[11.5px] text-foreground/80 leading-relaxed wrap-break-word whitespace-pre-wrap overflow-hidden mb-1.5">

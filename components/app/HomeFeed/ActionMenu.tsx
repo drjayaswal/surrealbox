@@ -6,9 +6,9 @@ import {
   DotsThreeIcon, 
   FlagIcon, 
   UserIcon, 
-  SealCheckIcon 
+  SealCheckIcon,
+  ShieldCheckIcon 
 } from "@phosphor-icons/react";
-import { ReputationBadge } from "./ReputationBadge";
 import { cn } from "@/lib/utils";
 
 interface ActionMenuProps {
@@ -101,6 +101,14 @@ export function ActionMenu({
               <FlagIcon size={12} weight="fill" />
               {label}
             </button>
+            <div className="px-3 py-2 bg-gray-50 border-t border-gray-100/50">
+              <div className="flex items-center gap-1.5 opacity-40">
+                <ShieldCheckIcon size={10} weight="fill" className="text-primary" />
+                <span className="text-[9px] font-medium leading-tight">
+                  Moderated by BART
+                </span>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

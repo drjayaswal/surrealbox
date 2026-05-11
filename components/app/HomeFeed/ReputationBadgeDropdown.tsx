@@ -12,10 +12,10 @@ const RULES = [
   { label: "You downvote", points: "-1" },
 ];
 
-export function ReputationBadgeDropDown({ 
-  reputation, 
-  className 
-}: { 
+export function ReputationBadgeDropDown({
+  reputation,
+  className
+}: {
   reputation: number;
   className?: string;
 }) {
@@ -35,37 +35,36 @@ export function ReputationBadgeDropDown({
         )}
       >
         <span>{reputation.toLocaleString()}<span className="hidden md:inline ml-1">Reputation</span></span>
-        <CaretDownIcon 
-          size={10} 
-          className={cn("transition-transform duration-300", show && "rotate-180")} 
+        <CaretDownIcon
+          size={10}
+          className={cn("transition-transform duration-300", show && "rotate-180")}
         />
       </button>
 
       <AnimatePresence>
         {show && (
           <>
-            <div 
-              className="fixed inset-0 z-40" 
-              onClick={() => setShow(false)} 
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setShow(false)}
             />
             <motion.div
               initial={{ opacity: 0, y: -4, scale: 0.95, originX: 1, originY: 0 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.95 }}
-              transition={{ 
-                duration: 0.25, 
-                ease: [0.23, 1, 0.32, 1] 
+              transition={{
+                duration: 0.25,
+                ease: [0.23, 1, 0.32, 1]
               }}
               className="absolute top-3 right-0 mt-2 z-50 w-[200px] bg-white rounded-lg rounded-tr-none shadow-lg border border-gray-100 px-3 py-2"
-            > 
+            >
               <div className="space-y-1">
                 {RULES.map((r) => (
                   <div key={r.label} className="flex items-center justify-between gap-2">
                     <span className="text-[10.5px] text-muted-foreground/80 font-medium truncate">{r.label}</span>
                     <span
-                      className={`text-[10.5px] font-bold tabular-nums ${
-                        r.points.startsWith("-") ? "text-red-500" : "text-green-600"
-                      }`}
+                      className={`text-[10.5px] font-bold tabular-nums ${r.points.startsWith("-") ? "text-red-500" : "text-green-600"
+                        }`}
                     >
                       {r.points}
                     </span>

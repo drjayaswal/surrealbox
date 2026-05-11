@@ -443,11 +443,13 @@ export function AnswerCard({
                   <span className="hidden xs:inline">{localIsAccepted ? "Accepted" : "Accept"}</span>
                 </button>
               )}
-              <ActionMenu
-                author={answer.author}
-                onFlag={handleFlag}
-                verifiedLabel="Verified Expert"
-              />
+              {session && (
+                <ActionMenu
+                  author={answer.author}
+                  onFlag={handleFlag}
+                  verifiedLabel="Verified Expert"
+                />
+              )}
             </div>
           </div>
 

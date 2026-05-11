@@ -589,11 +589,13 @@ export function QuestionCard({
                   </span>
                   <span className="hidden md:inline ml-1">views</span>
                 </span>
-                <ActionMenu
-                  author={question.author}
-                  onFlag={handleFlag}
-                  verifiedLabel="Verified"
-                />
+                {session && (
+                  <ActionMenu
+                    author={question.author}
+                    onFlag={handleFlag}
+                    verifiedLabel="Verified"
+                  />
+                )}
               </div>
             </div>
             <div className="flex items-start justify-between mb-4 gap-2">

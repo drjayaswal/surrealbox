@@ -109,7 +109,22 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="mt-10 p-8 sm:p-12 rounded-[32px] bg-primary text-white relative overflow-hidden">
+        <div className="mt-20">
+          <h2 className="text-primary text-[13px] font-bold uppercase mb-8">Safety & Moderation</h2>
+          <div className="p-8 flex flex-col sm:flex-row items-center gap-8">
+            <div className="space-y-4">
+              <h4 className="text-[18px] font-semibold text-foreground">Advanced Content Integrity</h4>
+              <p className="text-[14px] text-muted-foreground leading-relaxed">
+                To maintain a professional and constructive environment, Surrealbox utilizes <strong>Facebook's BART (Bidirectional and Auto-Regressive Transformers)</strong> Large Model for real-time content moderation. 
+              </p>
+              <p className="text-[14px] text-muted-foreground leading-relaxed">
+                This Zero-Shot classification system automatically identifies and flags toxic content, harassment, and hate speech before it reaches the community, ensuring that your experience remains focused on knowledge sharing and reasoning.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-20 p-8 sm:p-12 rounded-[32px] bg-primary text-white relative overflow-hidden">
            <div className="relative z-10">
              <h3 className="text-2xl sm:text-3xl font-medium mb-4">Ready to join the community?</h3>
              <p className="text-white/70 text-[15px] mb-8 max-w-sm">
