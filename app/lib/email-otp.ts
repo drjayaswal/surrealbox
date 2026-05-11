@@ -68,7 +68,7 @@ export function getOTPEmailHtml({
       .header {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 20px;
         padding: 32px 24px 0 24px;
       }
 
@@ -116,7 +116,7 @@ export function getOTPEmailHtml({
       }
 
       .otp-box {
-        background: #f9fafb;
+        background: #ffffff;
         border: 1px solid var(--border-color);
         border-left: 4px solid var(--accent);
         padding: 24px 20px;
@@ -150,7 +150,7 @@ export function getOTPEmailHtml({
       .footer {
         padding: 24px;
         border-top: 1px solid var(--border-color);
-        background: #f9fafb;
+        background: #ffffff;
       }
 
       .footer p {
