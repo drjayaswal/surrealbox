@@ -1,16 +1,17 @@
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { nextCookies } from "better-auth/next-js";
-import { emailOTP, phoneNumber, admin } from "better-auth/plugins";
 import { db } from "@/app/db/index";
 import { resend } from "@/app/lib/mail";
+import { betterAuth } from "better-auth";
 import * as schema from "@/app/db/schema";
+import { getOTPEmailHtml } from "./email-otp";
+import { nextCookies } from "better-auth/next-js";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { emailOTP, phoneNumber, admin } from "better-auth/plugins";
 
-// if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-//   throw new Error(
-//     "Google OAuth credentials are not set in environment variables.",
-//   );
-// }
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  throw new Error(
+    "Google OAuth credentials are not set in environment variables.",
+  );
+}
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
@@ -39,12 +40,12 @@ export const auth = betterAuth({
       banReason: { type: "string", defaultValue: "" },
     },
   },
-  // socialProviders: {
-  //   google: {
-  //     clientId: process.env.GOOGLE_CLIENT_ID,
-  //     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  //   },
-  // },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    },
+  },
   plugins: [
     phoneNumber({
       otpLength: 8,
@@ -59,25 +60,16 @@ export const auth = betterAuth({
     emailOTP({
       otpLength: 8,
       async sendVerificationOTP({ email, otp, type }) {
-        // const { data, error } = await resend.emails.send({
-        //   from: "Surrealbox <onboarding@resend.dev>",
-        //   to: email,
-        //   subject:
-        //     type === "forget-password"
-        //       ? "Reset your password"
-        //       : "Verify your account",
-        //   html: `
-        //     <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
-        //       <h2 style="color: #111;">${type === "forget-password" ? "Reset Password" : "Verification Code"}</h2>
-        //       <div style="background-color: #f4f4f7; padding: 16px; text-align: center; border-radius: 4px;">
-        //         <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #2563eb;">${otp}</span>
-        //       </div>
-        //     </div>`,
-        // });
-
-        // if (error) throw new Error(`Resend failed: ${error.message}`);
-        
-        console.log(`OTP sent to ${email} : ${otp}`);
+        const { data, error } = await resend.emails.send({
+          from: "Surrealbox <onboarding@resend.dev>",
+          to: email,
+          subject:
+            type === "forget-password"
+              ? "Reset your password"
+              : "Verify your account",
+          html: getOTPEmailHtml({ otp, type }),
+        });
+        if (error) throw new Error(`Resend failed: ${error.message}`);
       },
     }),
     admin(),
