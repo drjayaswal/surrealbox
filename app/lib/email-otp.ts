@@ -87,7 +87,7 @@ export function getOTPEmailHtml({
 
       .brand-name {
         font-size: 22px;
-        font-weight: 700;
+        font-weight: 400;
         letter-spacing: -0.04em;
         color: var(--text-main);
         text-transform: lowercase;
@@ -173,7 +173,7 @@ export function getOTPEmailHtml({
           letter-spacing: 6px;
         }
         .brand-name {
-          font-size: 20px;
+          font-size: 40px;
         }
       }
     </style>
