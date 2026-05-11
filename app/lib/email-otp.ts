@@ -13,7 +13,7 @@ export function getOTPEmailHtml({
       ? "Use the following code to confirm your email change."
       : "Use the following code to verify your account.";
 
-  const logo = process.env.NEXT_PUBLIC_APP_URL + "/assets/email-logo.png";
+  const logo = "https://surrealbox.vercel.app/assets/email-logo.png";
 
   return `
 <!doctype html>
