@@ -62,6 +62,9 @@ export default function RootLayout({
       className={cn("antialiased", "h-full", lexend.variable, "font-sans")}
       suppressHydrationWarning
     >
+      <head>
+        <meta name="google-site-verification" content="5mFkW56v7_Xb90QPigmLJ9o7YRn2hIK6LMLMCSY0mF8" />
+      </head>
       <body className="min-h-full flex flex-col selection:bg-main selection:text-white" suppressHydrationWarning>
         <Toaster
           position="bottom-right"
