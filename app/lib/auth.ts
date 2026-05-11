@@ -60,6 +60,9 @@ export const auth = betterAuth({
     emailOTP({
       otpLength: 8,
       async sendVerificationOTP({ email, otp, type }) {
+        const logoPath = process.cwd() + "/public/assets/invert-logo.png";
+        const logoBuffer = await require("fs").promises.readFile(logoPath);
+
         const { data, error } = await resend.emails.send({
           from: "Surrealbox <onboarding@resend.dev>",
           to: email,
@@ -68,6 +71,13 @@ export const auth = betterAuth({
               ? "Reset your password"
               : "Verify your account",
           html: getOTPEmailHtml({ otp, type }),
+          attachments: [
+            {
+              filename: "logo.png",
+              content: logoBuffer,
+              contentId: "logo",
+            },
+          ],
         });
         if (error) throw new Error(`Resend failed: ${error.message}`);
       },

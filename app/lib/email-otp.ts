@@ -66,13 +66,12 @@ export function getOTPEmailHtml({
       .header {
         display: flex;
         align-items: center;
-        gap: 20px;
         padding: 32px 24px 0 24px;
       }
 
       .logo-wrap {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -80,14 +79,14 @@ export function getOTPEmailHtml({
       }
 
       .logo-wrap img {
-        width: 50%;
+        width: 100%;
         height: auto;
         display: block;
       }
 
       .brand-name {
         font-size: 22px;
-        margin-left: 10px;
+        margin-left: 12px;
         font-weight: 400;
         letter-spacing: -0.04em;
         color: var(--text-main);
@@ -185,7 +184,7 @@ export function getOTPEmailHtml({
         <div class="header">
           <div class="logo-wrap">
             <img
-              src="https://surrealbox.vercel.app/assets/invert-logo.png"
+              src="cid:logo"
               alt="Logo"
               onerror="this.style.display = 'none'"
             />
