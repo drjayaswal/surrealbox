@@ -566,6 +566,14 @@ export function QuestionCard({
                   {question.author.name}
                 </span>
               </div>
+
+              {question.author.emailVerified && (
+                <SealCheckIcon
+                  size={14}
+                  weight="fill"
+                  className="text-blue-500"
+                />
+              )}
               <span className="text-[10px] text-muted-foreground/40 hidden xs:inline">·</span>
               <span className="text-[10.5px] sm:text-[12px] text-muted-foreground/60">
                 {timeAgo(question.createdAt)}
@@ -611,7 +619,7 @@ export function QuestionCard({
                 />
               </button>
             </div>
-            <div className="flex items-center flex-wrap gap-2.5 sm:gap-5 border-t border-gray-100 pt-1.5 sm:pt-2">
+            <div className="flex items-center flex-wrap gap-2.5 sm:gap-5 pt-1.5 sm:pt-2">
               <button
                 onClick={handleToggleContext}
                 className={cn(
@@ -732,37 +740,38 @@ export function QuestionCard({
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="mt-2 ml-4 sm:ml-5 pl-4 sm:pl-5 border-l border-gray-100"
+                  className=""
                 >
                   <div className="py-4">
                     <motion.div
                       animate={isCommentShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
                       transition={{ duration: 0.4 }}
-                      className="flex items-center gap-2 bg-gray-100 shadow-inner border border-gray-100/50 rounded-xl px-2 py-1 mb-4 group/input w-full"
                     >
-                      <Input
-                        className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[13px] h-8 px-1"
-                        placeholder="Add a comment..."
-                        value={commentBody}
-                        onChange={(e) => setCommentBody(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handlePostComment();
-                        }}
-                        disabled={isSubmittingComment}
-                      />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-primary hover:bg-white hover:shadow-sm active:scale-95"
-                        onClick={handlePostComment}
-                        disabled={isSubmittingComment || !commentBody.trim()}
-                      >
-                        {isSubmittingComment ? (
-                          <SpinnerGapIcon size={14} className="animate-spin" />
-                        ) : (
-                          <PaperPlaneIcon size={14} className="rotate-45" />
-                        )}
-                      </Button>
+                      <div className="flex items-center gap-1.5 bg-gray-100 shadow-inner my-4 rounded-4xl pl-2 pr-1 py-1 group/input w-full">
+                        <Input
+                          className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[10.5px] sm:text-[11.5px] h-6"
+                          placeholder="Add a comment…"
+                          value={commentBody}
+                          onChange={(e) => setCommentBody(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handlePostComment();
+                          }}
+                          disabled={isSubmittingComment}
+                        />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-black cursor-pointer rounded-4xl border-transparent hover:border-gray-200/20 hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
+                          onClick={handlePostComment}
+                          disabled={isSubmittingComment || !commentBody.trim()}
+                        >
+                          {isSubmittingComment ? (
+                            <SpinnerGapIcon size={9} className="animate-spin" />
+                          ) : (
+                            <PaperPlaneIcon size={9} className="rotate-45" />
+                          )}
+                        </Button>
+                      </div>
                     </motion.div>
 
                     <div className="space-y-1 pl-1">
@@ -813,42 +822,40 @@ export function QuestionCard({
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className="mt-2 ml-4 sm:ml-5 pl-4 sm:pl-5 border-l border-gray-100"
+                  className=""
                 >
                   <div className="py-4">
                     <motion.div
                       animate={isAnswerShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
                       transition={{ duration: 0.4 }}
-                      className={cn(
-                        "flex items-center gap-2 bg-gray-100 shadow-inner border border-gray-100/50 rounded-xl px-2 py-1 mb-4 group/input w-full",
-                        isAuthor && "opacity-60 cursor-not-allowed"
-                      )}
                     >
-                      <Input
-                        className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[13px] h-8 px-1"
-                        placeholder={isAuthor ? "Wait for community members to answer your question." : "Write your answer..."}
-                        value={isAuthor ? "" : answerBody}
-                        onChange={(e) => !isAuthor && setAnswerBody(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !isAuthor) handlePostAnswer();
-                        }}
-                        disabled={isSubmittingAnswer || isAuthor}
-                      />
-                      {!isAuthor && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-primary hover:bg-white hover:shadow-sm active:scale-95"
-                          onClick={handlePostAnswer}
-                          disabled={isSubmittingAnswer || !answerBody.trim()}
-                        >
-                          {isSubmittingAnswer ? (
-                            <SpinnerGapIcon size={14} className="animate-spin" />
-                          ) : (
-                            <PaperPlaneIcon size={14} className="rotate-45" />
-                          )}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-1.5 bg-gray-100 shadow-inner my-4 rounded-4xl pl-2 pr-1 py-1 group/input w-full">
+                        <Input
+                          className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[10.5px] sm:text-[11.5px] h-6"
+                          placeholder={isAuthor ? "Wait for community members to answer your question." : "Write your answer..."}
+                          value={isAuthor ? "" : answerBody}
+                          onChange={(e) => !isAuthor && setAnswerBody(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !isAuthor) handlePostAnswer();
+                          }}
+                          disabled={isSubmittingAnswer || isAuthor}
+                        />
+                        {!isAuthor && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-black cursor-pointer rounded-4xl border-transparent hover:border-gray-200/20 hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
+                            onClick={handlePostAnswer}
+                            disabled={isSubmittingAnswer || !answerBody.trim()}
+                          >
+                            {isSubmittingAnswer ? (
+                              <SpinnerGapIcon size={9} className="animate-spin" />
+                            ) : (
+                              <PaperPlaneIcon size={9} className="rotate-45" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </motion.div>
 
                     <div className="space-y-4 px-2">

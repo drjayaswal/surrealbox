@@ -76,24 +76,6 @@ export function Avatar({ author, size = 30, gender }: { author: Author; size?: n
           className="w-full h-full object-cover"
         />
       </div>
-
-      {isVerified && (
-        <span
-          className="absolute"
-          style={{
-            top: 0,
-            right: 0,
-            width: size * 0.3,
-            height: size * 0.3,
-          }}
-        >
-          <SealCheckIcon
-            size={size * 0.3}
-            weight="fill"
-            className="text-blue-500"
-          />
-        </span>
-      )}
     </div>
   );
 }

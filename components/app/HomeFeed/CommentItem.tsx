@@ -18,6 +18,7 @@ import {
   PaperPlaneIcon,
   SpinnerGapIcon,
   SealCheckIcon,
+  CaretDownIcon,
 } from "@phosphor-icons/react";
 import { ActionMenu } from "./ActionMenu";
 
@@ -285,15 +286,14 @@ export function CommentItem({
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "flex items-start gap-2.5 py-3 group relative",
-        depth > 0 && "mt-1"
+        "flex items-start gap-2.5 py-4 border-t border-gray-200/75 group relative"
       )}
     >
       <div className={cn("shrink-0", depth > 0 ? "mt-1" : "mt-0.5")}>
         <Avatar author={comment.author} gender={comment.author.gender} size={depth > 0 ? 20 : 24} />
       </div>
 
-      <div className={cn("flex-1 min-w-0", depth > 0 && "pl-0.5")}>
+      <div className={cn("flex-1 min-w-0")}>
         <div className="flex items-center justify-between gap-1 mb-0.5">
           <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-wrap">
             <span className="text-[10px] sm:text-[11px] font-bold text-primary truncate max-w-[80px] sm:max-w-[140px]">
@@ -311,7 +311,7 @@ export function CommentItem({
             author={comment.author}
             onFlag={handleFlag}
             verifiedLabel="Verified Account"
-            buttonClassName="opacity-0 group-hover:opacity-100 p-0.5 sm:p-1"
+            buttonClassName="p-0.5 sm:p-1"
             dropdownClassName="w-[160px] sm:w-[190px]"
           />
         </div>
@@ -384,11 +384,15 @@ export function CommentItem({
           {localReplyCount > 0 && depth === 0 && (
             <button
               onClick={handleToggleReplies}
-              className="text-[9.5px] sm:text-[10px] text-primary/70 hover:text-primary transition-colors"
+              className="text-[9.5px] sm:text-[10px] flex items-center gap-1 text-black/70 hover:text-black transition-colors"
             >
-              {showReplies
-                ? "Hide discussion"
-                : `View ${localReplyCount} ${localReplyCount === 1 ? "reply" : "replies"}`}
+              <span>Show {localReplyCount} {localReplyCount > 1 ? "replies" : "reply"}</span>
+              <motion.div
+                animate={{ rotate: showReplies ? 180 : 0 }}
+                transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <CaretDownIcon size={10}/>
+              </motion.div>
             </button>
           )}
         </div>
@@ -402,9 +406,9 @@ export function CommentItem({
               transition={{ duration: 0.2 }}
               className="mt-2"
             >
-              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-xl px-2 py-1">
+              <div className="flex items-center gap-1.5 bg-gray-100 shadow-inner my-4 rounded-4xl pl-2 pr-1 py-1">
                 <Input
-                  className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[10.5px] sm:text-[11.5px] h-6 px-1"
+                  className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[10.5px] sm:text-[11.5px] h-6"
                   placeholder={`Reply to ${comment.author.name}…`}
                   value={replyBody}
                   onChange={(e) => setReplyBody(e.target.value)}
@@ -417,7 +421,7 @@ export function CommentItem({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-7 w-7 text-primary cursor-pointer hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
+                  className="h-7 w-7 text-black cursor-pointer rounded-4xl border-transparent hover:border-gray-200/20 hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
                   onClick={handlePostReply}
                   disabled={isSubmittingReply || !replyBody.trim()}
                 >
@@ -439,7 +443,7 @@ export function CommentItem({
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="mt-2 ml-4 sm:ml-5 pl-4 sm:pl-5 border-l border-gray-100"
+              className="mt-6 ml-6 sm:ml-8"
             >
               {isLoadingReplies ? (
                 <div className="flex justify-center py-2">

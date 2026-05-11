@@ -351,8 +351,8 @@ export function AnswerCard({
   return (
     <div
       className={cn(
-        "rounded-xl p-3.5 sm:p-4 border border-transparent shadow-sm transition-all duration-200 relative bg-white",
-        localIsAccepted ? "border-purple-600" : "border-gray-100"
+        "p-3 py-4 border border-transparent border-t-gray-200/75 transition-all duration-200 relative bg-white",
+        localIsAccepted && "border-purple-600"
       )}
     >
       {localIsAccepted && (
@@ -372,24 +372,22 @@ export function AnswerCard({
         <motion.div
           animate={isVoteShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
           transition={{ duration: 0.4 }}
-          className="flex flex-col items-center gap-0.5 pt-0.5 relative"
+          className="flex flex-col items-center gap-0.5 pt-1"
         >
-          {/* Timeline connecting line */}
-          <div className="absolute top-8 bottom-0 w-px bg-gray-50 left-1/2 -translate-x-1/2 -z-10" />
           <button
             onClick={() => handleVote("up")}
             className={cn(
-              "p-1 sm:p-1.5 rounded-lg transition-all duration-200",
+              "p-1 rounded-lg transition-all duration-200",
               vote === "up"
                 ? "bg-green-600/10 text-green-600"
                 : "text-muted-foreground/40 hover:text-green-700 hover:bg-green-600/5"
             )}
           >
-            <ArrowFatUpIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={vote === "up" ? "fill" : "regular"} />
+            <ArrowFatUpIcon size={15} className="sm:w-[17px] sm:h-[17px]" weight={vote === "up" ? "fill" : "regular"} />
           </button>
           <span
             className={cn(
-              "text-[11px] sm:text-[13px] font-bold tabular-nums min-w-[2ch] text-center",
+              "text-[10px] sm:text-[12px] font-bold tabular-nums min-w-[2ch] text-center",
               localScore > 0
                 ? "text-primary"
                 : localScore < 0
@@ -402,29 +400,36 @@ export function AnswerCard({
           <button
             onClick={() => handleVote("down")}
             className={cn(
-              "p-1 sm:p-1.5 rounded-lg transition-all duration-200",
+              "p-1 rounded-lg transition-all duration-200",
               vote === "down"
                 ? "bg-red-500/10 text-red-500"
                 : "text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/5"
             )}
           >
-            <ArrowFatDownIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={vote === "down" ? "fill" : "regular"} />
+            <ArrowFatDownIcon size={15} className="sm:w-[17px] sm:h-[17px]" weight={vote === "down" ? "fill" : "regular"} />
           </button>
         </motion.div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center flex-wrap gap-1.5 sm:gap-2.5 mb-1.5 sm:mb-2.5">
             <Avatar author={answer.author} gender={answer.author.gender} />
-            <span className="text-[11px] sm:text-[12.5px] font-semibold text-primary truncate max-w-[100px] sm:max-w-none">{answer.author.name}</span>
-            <span className="text-[10px] text-muted-foreground/50">·</span>
-            <span className="text-[10.5px] sm:text-[11.5px] text-muted-foreground/60">{timeAgo(answer.createdAt)}</span>
-            <div className="ml-auto flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] sm:text-[12.5px] font-semibold text-primary truncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">{answer.author.name}</span>
+
+            {answer.author.emailVerified && (
+              <SealCheckIcon
+                size={11}
+                weight="fill"
+                className="text-blue-500 shrink-0"
+              />
+            )}
+            <span className="text-[10px] sm:text-[11.5px] text-muted-foreground/50 truncate">{timeAgo(answer.createdAt)}</span>
+            <div className="ml-auto flex items-center gap-1 sm:gap-2 shrink-0">
               {isQuestionAuthor && (
                 <button
                   onClick={handleAccept}
                   disabled={isAccepting}
                   className={cn(
-                    "flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-md transition-all duration-200",
+                    "flex items-center gap-1 text-[9.5px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-md transition-all duration-200",
                     localIsAccepted
                       ? "text-green-600 bg-green-600/10"
                       : "bg-gray-100 text-muted-foreground/60"
@@ -433,9 +438,9 @@ export function AnswerCard({
                   {isAccepting ? (
                     <SpinnerGapIcon size={10} className="animate-spin" />
                   ) : (
-                    <SealCheckIcon size={11} weight={localIsAccepted ? "fill" : "bold"} />
+                    <SealCheckIcon size={10} className="sm:w-[11px] sm:h-[11px]" weight={localIsAccepted ? "fill" : "bold"} />
                   )}
-                  <span className="hidden sm:inline">{localIsAccepted ? "Accepted" : "Accept"}</span>
+                  <span className="hidden xs:inline">{localIsAccepted ? "Accepted" : "Accept"}</span>
                 </button>
               )}
               <ActionMenu
@@ -446,7 +451,7 @@ export function AnswerCard({
             </div>
           </div>
 
-          <p className="text-[13px] sm:text-[14px] text-foreground/85 leading-[1.6] sm:leading-[1.75] mb-2.5 sm:mb-3 wrap-break-word">
+          <p className="text-[10px] sm:text-[14px] text-foreground/85 leading-[1.6] sm:leading-[1.75] mb-2.5 sm:mb-3 wrap-break-word">
             <LinkifiedText text={answer.body} />
           </p>
 
@@ -518,41 +523,40 @@ export function AnswerCard({
                     </>
                   )}
                 </div>
-
-                <motion.div
-                  animate={isCommentShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
-                  transition={{ duration: 0.4 }}
-                  className={cn(
-                    "flex items-center gap-2 bg-white border border-primary/8 rounded-4xl px-1 py-0.5 max-w-full sm:max-w-[320px] mb-2",
-                    isAnswerAuthor && "opacity-60 cursor-not-allowed"
-                  )}
-                >
-                  <Input
-                    className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[11px] sm:text-[12px] h-7 px-1"
-                    placeholder={isAnswerAuthor ? "You cannot comment on your own answer" : "Add a comment..."}
-                    value={isAnswerAuthor ? "" : commentBody}
-                    onChange={(e) => !isAnswerAuthor && setCommentBody(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !isAnswerAuthor) handlePostComment();
-                    }}
-                    disabled={isSubmitting || isAnswerAuthor}
-                  />
-                  {!isAnswerAuthor && (
-                    <Button
-                      size="icon"
-                      variant="light"
-                      className="h-6 w-6 text-primary rounded-4xl"
-                      onClick={handlePostComment}
-                      disabled={isSubmitting || !commentBody.trim()}
-                    >
-                      {isSubmitting ? (
-                        <SpinnerGapIcon size={10} className="animate-spin" />
-                      ) : (
-                        <PaperPlaneIcon size={10} className="rotate-45" />
+                {isAnswerAuthor ||
+                  <motion.div
+                    animate={isCommentShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <div className="flex items-center gap-1.5 bg-gray-100 shadow-inner my-4 rounded-4xl pl-2 pr-1 py-1 group/input w-full">
+                      <Input
+                        className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[10.5px] sm:text-[11.5px] h-6"
+                        placeholder="Add a comment..."
+                        value={commentBody}
+                        onChange={(e) => !isAnswerAuthor && setCommentBody(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !isAnswerAuthor) handlePostComment();
+                        }}
+                        disabled={isSubmitting || isAnswerAuthor}
+                      />
+                      {!isAnswerAuthor && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-black cursor-pointer rounded-4xl border-transparent hover:border-gray-200/20 hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
+                          onClick={handlePostComment}
+                          disabled={isSubmitting || !commentBody.trim()}
+                        >
+                          {isSubmitting ? (
+                            <SpinnerGapIcon size={9} className="animate-spin" />
+                          ) : (
+                            <PaperPlaneIcon size={9} className="rotate-45" />
+                          )}
+                        </Button>
                       )}
-                    </Button>
-                  )}
-                </motion.div>
+                    </div>
+                  </motion.div>
+                }
               </motion.div>
             )}
           </AnimatePresence>
