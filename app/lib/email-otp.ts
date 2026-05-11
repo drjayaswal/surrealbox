@@ -80,13 +80,14 @@ export function getOTPEmailHtml({
       }
 
       .logo-wrap img {
-        width: 100%;
+        width: 50%;
         height: auto;
         display: block;
       }
 
       .brand-name {
         font-size: 22px;
+        margin-left: 10px;
         font-weight: 400;
         letter-spacing: -0.04em;
         color: var(--text-main);
