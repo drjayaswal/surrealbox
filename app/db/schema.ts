@@ -14,6 +14,8 @@ import { relations } from "drizzle-orm";
 
 export const voteDirectionEnum = pgEnum("vote_direction", ["up", "down"]);
 export const accountStatusEnum = pgEnum("account_status", ["active", "suspended"]);
+export const reportReferenceType = pgEnum("reference_type", ["question", "answer", "comment", "reply", "others"]);
+export const reportStatus = pgEnum("report_status", ["pending", "under_review", "guilty", "innocent"]);
 export const userRoleEnum = pgEnum("user_role", ["user", "admin"]);
 
 export const user = pgTable("user", {
@@ -42,6 +44,17 @@ export const session = pgTable("session", {
   ipAddress: text("ipAddress"),
   userAgent: text("userAgent"),
   userId: text("userId").notNull().references(() => user.id),
+});
+
+export const reports = pgTable("reports", {
+  id: text("id").primaryKey(),
+  createdAt: timestamp("createdAt").notNull(),
+  userId: text("userId").notNull().references(() => user.id),
+  reportedUserId: text("reportedUserId").notNull().references(() => user.id),
+  referenceId: text("referenceId").notNull(),
+  reportReferenceType: reportReferenceType("report_reference_type").default("others"),
+  status: reportStatus("status").default("pending"),
+  reason: text("reason").notNull(),
 });
 
 export const account = pgTable("account", {
@@ -77,6 +90,8 @@ export const questions = pgTable("questions", {
   body: text("body").notNull(),
   tags: text("tags").array().notNull().default([]),
   score: integer("score").default(0),
+  images: text("images").array().notNull().default([]),
+  imageCount: integer("image_count").default(0),
   viewCount: integer("view_count").default(0),
   answerCount: integer("answer_count").default(0),
   commentCount: integer("comment_count").default(0),

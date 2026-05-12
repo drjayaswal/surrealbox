@@ -2,19 +2,25 @@
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { XIcon, PlusIcon, HashIcon, CaretRightIcon, CircleNotchIcon, SealCheckIcon, CaretLeftIcon } from "@phosphor-icons/react";
+import { XIcon, PlusIcon, HashIcon, CaretRightIcon, CircleNotchIcon, SealCheckIcon, CaretLeftIcon, ImageIcon, TrashIcon, PlusCircleIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 interface AskQuestionModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit?: (data: { title: string; body: string; tags: string[] }) => Promise<void> | void;
+  onSubmit?: (data: { title: string; body: string; tags: string[]; images: string[] }) => Promise<void> | void;
 }
 
 const MAX_TAGS = 5;
 const MAX_TITLE = 255;
 const SUGGESTED_TAGS = ["react", "nextjs", "typescript", "css", "nodejs", "database", "auth", "api", "ui", "performance"];
+
+interface ImageFile {
+  file: File;
+  preview: string;
+  url?: string;
+}
 
 export function AskQuestionModal({ open, onClose, onSubmit }: AskQuestionModalProps) {
   const [title, setTitle] = useState("");
@@ -24,10 +30,13 @@ export function AskQuestionModal({ open, onClose, onSubmit }: AskQuestionModalPr
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagError, setTagError] = useState("");
+  const [images, setImages] = useState<ImageFile[]>([]);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const tagRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) {
@@ -38,6 +47,10 @@ export function AskQuestionModal({ open, onClose, onSubmit }: AskQuestionModalPr
         setTagInput("");
         setStep(1);
         setIsSubmitting(false);
+        setImages((prev) => {
+          prev.forEach(img => URL.revokeObjectURL(img.preview));
+          return [];
+        });
         setTagError("");
       }, 300);
     }
@@ -85,8 +98,71 @@ export function AskQuestionModal({ open, onClose, onSubmit }: AskQuestionModalPr
 
   const canProceed = step === 1 ? title.trim().length >= 10 : step === 2 ? body.trim().length >= 20 : true;
 
-  const handleNext = () => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = 2 - images.length;
+    if (remainingSlots <= 0) {
+      alert("Maximum 2 images allowed");
+      return;
+    }
+
+    const selectedFiles = Array.from(files).slice(0, remainingSlots);
+    const newImages = selectedFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file)
+    }));
+
+    setImages(prev => [...prev, ...newImages]);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => {
+      const img = prev[index];
+      if (img.preview) URL.revokeObjectURL(img.preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const handleNext = async () => {
     if (!canProceed) return;
+    
+    if (step === 2 && images.some(img => !img.url)) {
+      setIsUploadingImages(true);
+      try {
+        const uploadedImages = await Promise.all(
+          images.map(async (img) => {
+            if (img.url) return img;
+            
+            const formData = new FormData();
+            formData.append("file", img.file);
+            formData.append("isProfileImage", "false");
+
+            const response = await fetch("/api/profile/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            const result = await response.json();
+            if (result.success) {
+              return { ...img, url: result.url };
+            }
+            throw new Error(result.error || "Upload failed");
+          })
+        );
+        setImages(uploadedImages);
+        setStep(3);
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        alert("Failed to upload images. Please try again.");
+      } finally {
+        setIsUploadingImages(false);
+      }
+      return;
+    }
+
     if (step < 3) setStep((s) => (s + 1) as 1 | 2 | 3);
   };
 
@@ -94,8 +170,21 @@ export function AskQuestionModal({ open, onClose, onSubmit }: AskQuestionModalPr
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await onSubmit?.({ title: title.trim(), body: body.trim(), tags });
-      onClose();
+      const imageUrls = images
+        .map((img) => img.url)
+        .filter((url): url is string => typeof url === "string");
+
+      const response = await fetch("/api/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, body, tags, images: imageUrls }),
+      });
+      if (response.ok) {
+        onClose();
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Submit failed:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -284,6 +373,46 @@ export function AskQuestionModal({ open, onClose, onSubmit }: AskQuestionModalPr
                           ) : <div />}
                           <span className="text-[10px] text-muted-foreground/40 font-medium">⌘ + Enter to continue</span>
                         </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[11px] font-bold text-muted-foreground/40">Images (Optional)</span>
+                          <button
+                            type="button"
+                            onClick={() => imageInputRef.current?.click()}
+                            disabled={isUploadingImages}
+                            className="flex items-center gap-1.5 text-[11px] text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+                          >
+                            {isUploadingImages ? <CircleNotchIcon size={14} className="animate-spin" /> : <PlusCircleIcon size={14} weight="bold" />}
+                            {isUploadingImages ? "Adding..." : "Add"}
+                          </button>
+                        </div>
+                        
+                        <input
+                          type="file"
+                          ref={imageInputRef}
+                          onChange={handleImageUpload}
+                          multiple
+                          accept="image/*"
+                          className="hidden"
+                        />
+
+                        {images.length > 0 && (
+                          <div className="flex flex-wrap">
+                            {images.map((img, idx) => (
+                              <div key={idx} className="relative group w-30 h-30 rounded-none overflow-hidden bg-gray-50 border border-gray-100">
+                                <img src={img.preview} alt="" className="w-full h-full object-cover scale-150" />
+                                <button
+                                  onClick={() => removeImage(idx)}
+                                  className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                                >
+                                  <TrashIcon size={14} weight="bold" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}

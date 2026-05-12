@@ -89,6 +89,7 @@ export default function ProfilePage() {
   const [userForm, setUserForm] = useState<UserProfile>({});
   const [userSave, setUserSave] = useState<SaveState>("idle");
   const [isUploading, setIsUploading] = useState(false);
+  const [reportCount, setReportCount] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -99,8 +100,13 @@ export default function ProfilePage() {
       gender: user.gender ?? "",
       image: user.image ?? "",
       bio: user.bio ?? "",
-      emailVerified: user.emailVerified ?? "",
+      emailVerified: user.emailVerified ?? false,
     });
+
+    fetch("/api/profile/reports/count")
+      .then(res => res.json())
+      .then(data => setReportCount(data.count))
+      .catch(err => console.error("Error fetching report count:", err));
   }, [user?.id]);
 
   const doSave = async (setState: (s: SaveState) => void, fn: () => Promise<{ success: boolean }>) => {
@@ -324,6 +330,18 @@ export default function ProfilePage() {
                   </Field>
                   <SaveButton state={userSave} onClick={saveUser} label="Save" />
                 </div>
+                {reportCount !== null && reportCount > 0 && (
+                    <div className="mt-5 p-4 rounded bg-red-600 flex items-start gap-3 text-left">
+                        <WarningIcon size={25} weight="fill" className="text-white" />
+                      <div className="space-y-0.5">
+                        <p className="text-[13px] font-bold text-white tracking-tight">Account Warning</p>
+                        <p className="text-[11px] text-white font-medium leading-relaxed">
+                          Your content has been flagged {reportCount} {reportCount === 1 ? "time" : "times"}. 
+                          You are at risk of losing <span className="font-bold">{Number(reportCount) * 100}</span> reputation points.
+                        </p>
+                      </div>
+                    </div>
+                  )}
               </div>
             </motion.div>
           </div>

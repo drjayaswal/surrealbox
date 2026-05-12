@@ -23,16 +23,18 @@ interface ActionMenuProps {
   className?: string;
   buttonClassName?: string;
   dropdownClassName?: string;
+  isAuthor?: boolean;
 }
 
 export function ActionMenu({
   author,
   onFlag,
-  label = "Flag",
+  label = "Report",
   verifiedLabel = "Verified",
   className,
   buttonClassName,
   dropdownClassName,
+  isAuthor = false,
 }: ActionMenuProps) {
   const [show, setShow] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -91,17 +93,19 @@ export function ActionMenu({
                 </div>
               )}
             </div>
-            <button
-              onClick={async () => {
-                await onFlag();
-                setShow(false);
-              }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-[11px] sm:text-[12px] text-red-500 hover:bg-red-500/5 transition-colors text-left"
-            >
-              <FlagIcon size={12} weight="fill" />
-              {label}
-            </button>
-            <div className="px-3 py-2 bg-gray-50 border-t border-gray-100/50">
+            {!isAuthor && (
+              <button
+                onClick={async () => {
+                  await onFlag();
+                  setShow(false);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-[11px] sm:text-[12px] text-red-500 hover:bg-gray-50 transition-colors text-left"
+              >
+                <FlagIcon size={12} weight="fill" />
+                {label}
+              </button>
+            )}
+            <div className="px-3 py-2 border-t border-gray-100/50">
               <div className="flex items-center gap-1.5 opacity-40">
                 <ShieldCheckIcon size={10} weight="fill" className="text-primary" />
                 <span className="text-[9px] font-medium leading-tight">

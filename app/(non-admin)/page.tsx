@@ -173,7 +173,7 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      <div className="max-w-2xl xl:max-w-[680px] mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-10">
+      <div className="mx-auto sm:p-10 p-5">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}

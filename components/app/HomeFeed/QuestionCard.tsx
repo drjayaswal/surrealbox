@@ -4,6 +4,7 @@ import { Question, VoteDirection, Answer, Comment } from "@/app/types/home.type"
 import { Avatar } from "./Avatar";
 import { AnswerCard } from "./AnswerCard";
 import { CommentItem } from "./CommentItem";
+import { ReportModal } from "./ReportModal";
 import { timeAgo, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,6 +18,8 @@ import {
   PlusCircleIcon,
   LightbulbIcon,
   TagIcon,
+  ImageIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import { ActionMenu } from "./ActionMenu";
 import { Button } from "@/components/ui/button";
@@ -41,6 +44,9 @@ export function QuestionCard({
   const [showComments, setShowComments] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
   const [showTags, setShowTags] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const [localComments, setLocalComments] = useState<Comment[]>([]);
   const [localAnswers, setLocalAnswers] = useState<Answer[]>([]);
@@ -66,6 +72,7 @@ export function QuestionCard({
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isBodyExpanded, setIsBodyExpanded] = useState(false);
+  const [shouldShowImages, setShouldShowImages] = useState(false);
   const [isTitleExpanded, setIsTitleExpanded] = useState(false);
   const [isVoteShaking, setIsVoteShaking] = useState(false);
   const [isAnswerShaking, setIsAnswerShaking] = useState(false);
@@ -118,6 +125,15 @@ export function QuestionCard({
     setLocalViewCount(question.viewCount);
     viewTracked.current = false;
   }, [question.id, question.author.reputation, question.viewCount]);
+
+  useEffect(() => {
+    if (isBodyExpanded) {
+      const timer = setTimeout(() => setShouldShowImages(true), 300);
+      return () => clearTimeout(timer);
+    } else {
+      setShouldShowImages(false);
+    }
+  }, [isBodyExpanded]);
 
   useEffect(() => {
     const handleRep = (e: CustomEvent<{ userId: string, delta: number }>) => {
@@ -235,14 +251,24 @@ export function QuestionCard({
     trackView();
   }
 
-  function handleToggleTags() {
-    const nextOpen = !showTags;
-    setShowTags(nextOpen);
+  const handleToggleTags = () => {
+    setShowTags(!showTags);
+    if (!showTags) {
+      setShowComments(false);
+      setShowAnswers(false);
+      setIsBodyExpanded(false);
+    }
+    trackView();
+  };
+
+  const handleToggleImages = () => {
+    const nextOpen = !isBodyExpanded;
+    setIsBodyExpanded(nextOpen);
     setShowComments(false);
     setShowAnswers(false);
-    setIsBodyExpanded(false);
+    setShowTags(false);
     trackView();
-  }
+  };
 
   function handleToggleTitle() {
     setIsTitleExpanded(!isTitleExpanded);
@@ -486,17 +512,12 @@ export function QuestionCard({
     setShowMenu(false);
     if (!session) {
       onAuthRequired({
-        title: "Flag content",
-        description: "Sign in to flag inappropriate content for review.",
+        title: "Report content",
+        description: "Sign in to report inappropriate content for review.",
       });
       return;
     }
-    try {
-      await fetch(`/api/questions/${question.id}/flag`, { method: "POST" });
-      // toast.success("Question flagged for review. Thank you.");
-    } catch {
-      // toast.error("Failed to flag question.");
-    }
+    setShowReportModal(true);
   }
 
   function handleAcceptAnswer(answerId: string, isAccepted: boolean) {
@@ -594,6 +615,7 @@ export function QuestionCard({
                     author={question.author}
                     onFlag={handleFlag}
                     verifiedLabel="Verified"
+                    isAuthor={isAuthor}
                   />
                 )}
               </div>
@@ -697,14 +719,39 @@ export function QuestionCard({
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
-                  className=""
                 >
-                  <div className="py-4">
-                    <div className="">
-                      <p className="text-[13px] max-h-[100px] overflow-auto sm:text-[14px] text-muted-foreground leading-[1.7] selection:bg-primary/10 wrap-break-word">
-                        <LinkifiedText text={question.body} />
-                      </p>
-                    </div>
+                  <div className="py-4 space-y-4">
+                    <p className="text-[13px] max-h-[150px] overflow-auto sm:text-[14px] text-muted-foreground leading-[1.7] selection:bg-primary/10 wrap-break-word">
+                      <LinkifiedText text={question.body} />
+                    </p>
+
+                    {question.imageCount > 0 && shouldShowImages && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={cn(
+                          "grid gap-px overflow-hidden border border-gray-100/50 bg-gray-50/50",
+                          question.images.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                        )}
+                      >
+                        {question.images.map((url, idx) => (
+                          <div
+                            key={idx}
+                            className={cn(
+                              "relative overflow-hidden cursor-zoom-in",
+                              question.images.length === 1 ? "aspect-auto max-h-[450px]" : "aspect-4/3 sm:aspect-square"
+                            )}
+                            onClick={() => setSelectedImage(url)}
+                          >
+                            <img
+                              src={url}
+                              alt={`${question.title}-image-${idx + 1}`}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-700 ease-out"
+                            />
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -901,7 +948,51 @@ export function QuestionCard({
             </AnimatePresence>
           </div>
         </div>
+
+        <AnimatePresence>
+          {selectedImage && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedImage(null)}
+                className="fixed inset-0 z-100 bg-black/90 backdrop-blur-sm cursor-zoom-out"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                className="fixed inset-0 z-101 flex items-center justify-center p-4 sm:p-8 pointer-events-none"
+              >
+                <div className="relative max-w-5xl w-full h-full flex items-center justify-center pointer-events-auto">
+                  <img
+                    src={selectedImage}
+                    alt="Full view"
+                    className="max-w-full max-h-full object-contain shadow-2xl"
+                  />
+                  <button
+                    onClick={() => setSelectedImage(null)}
+                    className="absolute top-0 right-0 m-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors backdrop-blur-md"
+                  >
+                    <XIcon size={24} weight="bold" />
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
+
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        referenceId={question.id}
+        referenceType="question"
+        reportedUserId={question.authorId}
+        title={question.title}
+      />
     </motion.div>
   );
 }

@@ -3,6 +3,7 @@
 import { Answer, Comment, VoteDirection } from "@/app/types/home.type";
 import { Avatar } from "./Avatar";
 import { CommentItem } from "./CommentItem";
+import { ReportModal } from "./ReportModal";
 import { timeAgo, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -47,6 +48,7 @@ export function AnswerCard({
   const [isAccepting, setIsAccepting] = useState(false);
   const [isVoteShaking, setIsVoteShaking] = useState(false);
   const [isCommentShaking, setIsCommentShaking] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const lastActionTime = useRef<number>(0);
 
 
@@ -335,17 +337,12 @@ export function AnswerCard({
     setShowMenu(false);
     if (!session) {
       onAuthRequired({
-        title: "Flag content",
-        description: "Sign in to flag inappropriate content for review.",
+        title: "Report content",
+        description: "Sign in to report inappropriate content for review.",
       });
       return;
     }
-    try {
-      await fetch(`/api/answers/${answer.id}/flag`, { method: "POST" });
-      // toast.success("Answer flagged for review. Thank you.");
-    } catch {
-      // toast.error("Failed to flag answer.");
-    }
+    setShowReportModal(true);
   }
 
   return (
@@ -410,6 +407,7 @@ export function AnswerCard({
                 author={answer.author}
                 onFlag={handleFlag}
                 verifiedLabel="Verified Expert"
+                isAuthor={isAnswerAuthor}
               />
             )}
           </div>
@@ -558,6 +556,15 @@ export function AnswerCard({
           )}
         </AnimatePresence>
       </div>
+
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        referenceId={answer.id}
+        referenceType="answer"
+        reportedUserId={answer.authorId}
+        title={answer.body}
+      />
     </div>
   );
 }

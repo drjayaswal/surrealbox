@@ -26,10 +26,10 @@ export async function POST(req: NextRequest) {
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-
+    const fileName = file.name+Date.now();
     const publicUrl = await uploadToSupabase(buffer, userId, {
       isProfileImage,
-      fileName: file.name,
+      fileName: fileName,
       contentType: file.type,
     });
 

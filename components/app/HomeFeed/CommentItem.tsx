@@ -4,6 +4,7 @@ import { Comment, VoteDirection } from "@/app/types/home.type";
 import { Avatar } from "./Avatar";
 import { timeAgo, cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { ReportModal } from "./ReportModal";
 import { LinkifiedText } from "./LinkifiedText";
 import { useSession } from "@/app/lib/auth-client";
 import { useState, useRef, useEffect } from "react";
@@ -38,6 +39,7 @@ export function CommentItem({
   depth = 0,
 }: CommentItemProps) {
   const { data: session } = useSession();
+  const isAuthor = session?.user?.id === comment.authorId;
 
   const [localScore, setLocalScore] = useState(comment.score ?? 0);
   const [vote, setVote] = useState<VoteDirection>(comment.userVote);
@@ -53,6 +55,7 @@ export function CommentItem({
   const [isVoteShaking, setIsVoteShaking] = useState(false);
   const [localAuthorReputation, setLocalAuthorReputation] = useState(comment.author.reputation);
   const { adjustReputation } = useUser();
+  const [showReportModal, setShowReportModal] = useState(false);
   const lastActionTime = useRef<number>(0);
 
   function checkCooldown() {
@@ -263,17 +266,12 @@ export function CommentItem({
     setShowMenu(false);
     if (!session) {
       onAuthRequired({
-        title: "Flag content",
-        description: "Sign in to flag inappropriate content for review.",
+        title: "Report content",
+        description: "Sign in to report inappropriate content for review.",
       });
       return;
     }
-    try {
-      await fetch(`/api/comments/${comment.id}/flag`, { method: "POST" });
-      // toast.success("Content flagged for review. Thank you.");
-    } catch {
-      // toast.error("Failed to flag content.");
-    }
+    setShowReportModal(true);
   }
 
   const authorUsername =
@@ -314,6 +312,7 @@ export function CommentItem({
               verifiedLabel="Verified Account"
               buttonClassName="p-0.5 sm:p-1"
               dropdownClassName="w-[160px] sm:w-[190px]"
+              isAuthor={isAuthor}
             />
           )}
         </div>
@@ -469,6 +468,15 @@ export function CommentItem({
           )}
         </AnimatePresence>
       </div>
+
+      <ReportModal
+        open={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        referenceId={comment.id}
+        referenceType={depth > 0 ? "reply" : "comment"}
+        reportedUserId={comment.authorId}
+        title={comment.content}
+      />
     </motion.div>
   );
 }

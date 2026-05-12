@@ -93,7 +93,7 @@ const Navbar = () => {
         initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="fixed top-0 left-0 z-50 w-full lg:w-1/2 lg:bg-black/20 lg:backdrop-blur-md pointer-events-none"
+        className="fixed top-0 left-0 z-50 w-full lg:w-1/3 pointer-events-none"
         style={{ minWidth: "min-content" }}
       >
         <div className="hidden lg:flex h-0.5 w-full pointer-events-auto" />
@@ -135,11 +135,6 @@ const Navbar = () => {
             </nav>
             {user && (
               <div className="flex items-center gap-3">
-                {profile && (
-                  <div className="hidden sm:flex items-center">
-                    <ReputationBadge reputation={profile.reputation} className="bg-white/10 text-white border-white/20" />
-                  </div>
-                )}
                 <button
                   onClick={handleSignOut}
                   disabled={isSigningOut}

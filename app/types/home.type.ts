@@ -46,6 +46,8 @@ export interface Question {
   body: string;
   tags: string[];
   score: number;
+  images: string[];
+  imageCount: number;
   answerCount: number;
   commentCount: number;
   viewCount: number;

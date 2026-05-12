@@ -34,8 +34,8 @@ export function ImageSidebar() {
   }, []);
 
   return (
-    <div className="hidden lg:block w-1/2 shrink-0">
-      <div className="fixed top-0 left-0 w-1/2 h-screen overflow-hidden bg-black">
+    <div className="hidden lg:block w-1/3 shrink-0">
+      <div className="fixed top-0 left-0 w-1/3 h-screen overflow-hidden bg-black">
         <div className="relative w-full h-full shimmer">
           <AnimatePresence mode="popLayout">
             <motion.div

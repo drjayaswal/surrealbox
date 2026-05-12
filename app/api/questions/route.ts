@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 
-    const { title, body: questionBody, tags } = body;
+    const { title, body: questionBody, tags, images } = body;
 
     // Content Moderation
     const [titleMod, bodyMod] = await Promise.all([
@@ -145,6 +145,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (Array.isArray(images) && images.length > 2) {
+      return NextResponse.json(
+        { error: "Maximum 2 images allowed per question" },
+        { status: 400 }
+      );
+    }
+
     const baseSlug = slugify(title.trim());
     const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 7)}`;
 
@@ -156,6 +163,8 @@ export async function POST(req: NextRequest) {
         tags: Array.isArray(tags) ? tags.filter((t: any) => typeof t === "string") : [],
         slug,
         authorId: sessionData.user.id,
+        images: Array.isArray(images) ? images : [],
+        imageCount: Array.isArray(images) ? images.length : 0,
       })
       .returning();
 
