@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { authClient } from "@/app/lib/auth-client";
 import { apiRequest } from "@/app/lib/api-client";
 import { motion } from "framer-motion";
@@ -10,7 +10,7 @@ import {
   WarningIcon,
   EnvelopeIcon,
   CameraIcon,
-  SpinnerGapIcon,
+  CircleNotchIcon,
   SealCheckIcon,
 } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
@@ -60,7 +60,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 function SaveButton({ state, onClick, label = "Save Changes" }: { state: SaveState; onClick: () => void; label?: string }) {
   const cfg = {
     idle: { text: label, cls: "", Icon: CheckIcon, spin: false },
-    saving: { text: "Saving…", cls: "cursor-not-allowed", Icon: SpinnerGapIcon, spin: true },
+    saving: { text: "Saving…", cls: "cursor-not-allowed", Icon: CircleNotchIcon, spin: true },
     success: { text: "Saved!", cls: "", Icon: SealCheckIcon, spin: false },
     error: { text: "Retry", cls: "", Icon: WarningIcon, spin: false },
   }[state];
@@ -88,6 +88,8 @@ export default function ProfilePage() {
 
   const [userForm, setUserForm] = useState<UserProfile>({});
   const [userSave, setUserSave] = useState<SaveState>("idle");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -127,6 +129,37 @@ export default function ProfilePage() {
   };
 
   const saveUser = () => doSave(setUserSave, () => apiRequest(`/api/profile/user/${user!.id}`, { method: "PATCH", body: userForm }));
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("isProfileImage", "true");
+
+    try {
+      const response = await fetch("/api/profile/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setUserForm((prev) => ({ ...prev, image: result.url }));
+        await refetch();
+        toast.success("Profile image updated!");
+      } else {
+        toast.error(result.error || "Failed to upload image");
+      }
+    } catch (err) {
+      toast.error("An error occurred while uploading the image");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isPending && !user) {
@@ -183,7 +216,11 @@ export default function ProfilePage() {
               <motion.div className="overflow-hidden">
                 <div className="p-5 flex flex-col items-center text-center relative z-10">
                   <div className="relative mb-4">
-                    {!userForm.image ? (
+                    {isUploading ? (
+                      <div className="w-24 h-24 rounded-full bg-black/5 flex items-center justify-center">
+                        <CircleNotchIcon size={24} className="animate-spin text-primary" />
+                      </div>
+                    ) : !userForm.image ? (
                       <Avatar author={userForm as Author} size={90} gender={userForm.gender} />
                     ) : (
                       <img
@@ -192,9 +229,21 @@ export default function ProfilePage() {
                         className="w-24 h-24 rounded-full object-cover bg-black/5"
                       />
                     )}
-                    <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-2xl bg-white/10 backdrop-blur-md text-main hover:bg-gray-100 cursor-pointer shadow-lg flex items-center justify-center transition-all active:scale-90">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="absolute -bottom-1 -right-1 h-6 w-6 rounded-2xl bg-white/10 backdrop-blur-md text-main hover:bg-gray-100 cursor-pointer shadow-lg flex items-center justify-center transition-all active:scale-90 disabled:opacity-50"
+                    >
                       <CameraIcon size={14} weight="bold" />
-                    </div>
+                    </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
                   </div>
 
                   <p className=" text-[15px] text-black ">{userForm.name || "Your Name"}</p>

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { HouseSimpleIcon, SpinnerIcon } from '@phosphor-icons/react'
+import { HouseSimpleIcon, CircleNotchIcon } from '@phosphor-icons/react'
 
 const Error = () => {
   const [isLoading, setIsLoading] = useState(false)
@@ -33,7 +33,7 @@ const Error = () => {
         >
           {isLoading ? (
             <>
-              <SpinnerIcon className="mr-2 h-4 w-4 animate-spin" />
+              <CircleNotchIcon className="mr-2 h-4 w-4 animate-spin" />
               Redirecting...
             </>
           ) : (

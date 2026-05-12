@@ -12,7 +12,7 @@ import {
   ChatCircleDotsIcon,
   CaretDownIcon,
   PaperPlaneIcon,
-  SpinnerGapIcon,
+  CircleNotchIcon,
   SealCheckIcon,
   PlusCircleIcon,
   LightbulbIcon,
@@ -648,7 +648,7 @@ export function QuestionCard({
                 )}
               >
                 <TagIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={showTags ? "fill" : "regular"} />
-                <span className="hidden sm:inline">Tags</span>
+                <span>{question.tags.length}<span className="hidden sm:inline ml-1">{question.tags.length === 1 ? "Tag" : "Tags"}</span></span>
                 <CaretDownIcon
                   size={10}
                   className={cn("transition-transform duration-200", showTags && "rotate-180")}
@@ -664,7 +664,7 @@ export function QuestionCard({
                 )}
               >
                 <ChatCircleDotsIcon size={14} className="sm:w-[16px] sm:h-[16px]" weight={showComments ? "fill" : "regular"} />
-                <span>{localCommentCount}<span className="hidden sm:inline ml-1">Comments</span></span>
+                <span>{localCommentCount}<span className="hidden sm:inline ml-1">{localCommentCount === 1 ? "Comment" : "Comments"}</span></span>
                 <CaretDownIcon
                   size={10}
                   className={cn("transition-transform duration-200", showComments && "rotate-180")}
@@ -681,7 +681,7 @@ export function QuestionCard({
                 )}
               >
                 <SealCheckIcon size={14} className={cn("sm:w-[16px] sm:h-[16px]", localAnswers.some(a => a.isAccepted) && "text-purple-600")} weight={showAnswers || localAnswers.some(a => a.isAccepted) ? "fill" : "regular"} />
-                <span>{localAnswerCount}<span className="hidden sm:inline ml-1">Answers</span></span>
+                <span>{localAnswerCount}<span className="hidden sm:inline ml-1">{localAnswerCount === 1 ? "Answer" : "Answers"}</span></span>
                 <CaretDownIcon
                   size={10}
                   className={cn("transition-transform duration-200", showAnswers && "rotate-180")}
@@ -763,12 +763,12 @@ export function QuestionCard({
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-7 w-7 text-black cursor-pointer rounded-4xl border-transparent hover:border-gray-200/20 hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
+                          className="h-7 w-7 text-black cursor-pointer rounded-4xl sm:border-transparent hover:border-gray-200/20 border-gray-200/20 hover:bg-white sm:bg-transparent bg-white sm:shadow-none shadow-sm hover:shadow-sm active:scale-95 shrink-0"
                           onClick={handlePostComment}
                           disabled={isSubmittingComment || !commentBody.trim()}
                         >
                           {isSubmittingComment ? (
-                            <SpinnerGapIcon size={9} className="animate-spin" />
+                            <CircleNotchIcon size={9} className="animate-spin" />
                           ) : (
                             <PaperPlaneIcon size={9} className="rotate-45" />
                           )}
@@ -779,10 +779,10 @@ export function QuestionCard({
                     <div className="space-y-1 pl-1">
                       {isLoadingComments && localComments.length === 0 ? (
                         <div className="flex justify-center py-6">
-                          <SpinnerGapIcon size={20} className="animate-spin text-primary/30" />
+                          <CircleNotchIcon size={20} className="animate-spin text-primary/30" />
                         </div>
                       ) : localComments.length === 0 ? (
-                        <p className="text-[12px] text-muted-foreground/30 py-2">No comments yet.</p>
+                        <p className="text-[12px] text-muted-foreground/30 px-2">No comments yet.</p>
                       ) : (
                         <>
                           {localComments.map((c) => (
@@ -796,7 +796,7 @@ export function QuestionCard({
                           ))}
                           {isLoadingComments && (
                             <div className="flex justify-center py-4">
-                              <SpinnerGapIcon size={18} className="animate-spin text-primary/30" />
+                              <CircleNotchIcon size={18} className="animate-spin text-primary/30" />
                             </div>
                           )}
                           {hasMoreComments && !isLoadingComments && (
@@ -827,43 +827,41 @@ export function QuestionCard({
                   className=""
                 >
                   <div className="py-4">
-                    <motion.div
+                    {isAuthor || <motion.div
                       animate={isAnswerShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
                       transition={{ duration: 0.4 }}
                     >
-                      <div className="flex items-center gap-1.5 bg-gray-100 shadow-inner my-4 rounded-4xl pl-2 pr-1 py-1 group/input w-full">
+                      <div className="flex items-center gap-1.5 bg-gray-200/75 shadow-inner my-4 rounded-4xl pl-2 pr-1 py-1 group/input w-full">
                         <Input
                           className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[10.5px] sm:text-[11.5px] h-6"
-                          placeholder={isAuthor ? "Wait for community members to answer your question." : "Write your answer..."}
-                          value={isAuthor ? "" : answerBody}
-                          onChange={(e) => !isAuthor && setAnswerBody(e.target.value)}
+                          placeholder="Write your answer..."
+                          value={answerBody}
+                          onChange={(e) => setAnswerBody(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" && !isAuthor) handlePostAnswer();
+                            if (e.key === "Enter") handlePostAnswer();
                           }}
-                          disabled={isSubmittingAnswer || isAuthor}
+                          disabled={isSubmittingAnswer}
                         />
-                        {!isAuthor && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7 text-black cursor-pointer rounded-4xl border-transparent hover:border-gray-200/20 hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
-                            onClick={handlePostAnswer}
-                            disabled={isSubmittingAnswer || !answerBody.trim()}
-                          >
-                            {isSubmittingAnswer ? (
-                              <SpinnerGapIcon size={9} className="animate-spin" />
-                            ) : (
-                              <PaperPlaneIcon size={9} className="rotate-45" />
-                            )}
-                          </Button>
-                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-black cursor-pointer rounded-4xl border-transparent hover:border-gray-200/20 hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
+                          onClick={handlePostAnswer}
+                          disabled={isSubmittingAnswer || !answerBody.trim()}
+                        >
+                          {isSubmittingAnswer ? (
+                            <CircleNotchIcon size={9} className="animate-spin" />
+                          ) : (
+                            <PaperPlaneIcon size={9} className="rotate-45" />
+                          )}
+                        </Button>
                       </div>
-                    </motion.div>
+                    </motion.div>}
 
                     <div className="space-y-4 px-2">
                       {isLoadingAnswers && localAnswers.length === 0 ? (
                         <div className="flex justify-center py-10">
-                          <SpinnerGapIcon size={24} className="animate-spin text-primary/30" />
+                          <CircleNotchIcon size={24} className="animate-spin text-primary/30" />
                         </div>
                       ) : localAnswers.length === 0 ? (
                         <p className="text-[12px] text-muted-foreground/30 py-2 px-1">No answers yet.</p>
@@ -881,7 +879,7 @@ export function QuestionCard({
                           ))}
                           {isLoadingAnswers && (
                             <div className="flex justify-center py-6">
-                              <SpinnerGapIcon size={22} className="animate-spin text-primary/30" />
+                              <CircleNotchIcon size={22} className="animate-spin text-primary/30" />
                             </div>
                           )}
                           {hasMoreAnswers && !isLoadingAnswers && (

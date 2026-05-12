@@ -62,7 +62,7 @@ export function Avatar({ author, size = 30, gender }: { author: Author; size?: n
   }, [author.username, author.name, userGender, isVerified]);
 
   return (
-    <div className="relative w-fit scale-150 shrink-0">
+    <div className={`relative w-fit ${author.image || "scale-150"} shrink-0`}>
       <div
         className="rounded-full overflow-hidden flex items-center justify-center"
         style={{
@@ -71,7 +71,7 @@ export function Avatar({ author, size = 30, gender }: { author: Author; size?: n
         }}
       >
         <img
-          src={svg}
+          src={author.image || svg}
           alt={author.name}
           className="w-full h-full object-cover"
         />

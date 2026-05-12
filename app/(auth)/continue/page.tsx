@@ -8,7 +8,7 @@ import {
   ArrowRightIcon as ArrowRight,
   GoogleLogoIcon,
   SealCheckIcon as CheckCircle,
-  SpinnerIcon,
+  CircleNotchIcon,
   ArrowCircleLeftIcon,
   ArrowsClockwiseIcon,
 } from "@phosphor-icons/react";
@@ -307,7 +307,7 @@ export default function ContinuePage() {
                     >
                       {otpStatus === "sending" ? (
                         <>
-                          <SpinnerIcon className="animate-spin" size={18} />
+                          <CircleNotchIcon className="animate-spin" size={18} />
                           Sending code...
                         </>
                       ) : (
@@ -325,7 +325,7 @@ export default function ContinuePage() {
                       className="w-full sm:w-auto"
                     >
                       {otpStatus === "social" ? (
-                        <SpinnerIcon className="animate-spin" size={18} />
+                        <CircleNotchIcon className="animate-spin" size={18} />
                       ) : (
                         <GoogleLogoIcon size={18} weight="bold" className="text-black" />
                       )}
@@ -430,7 +430,7 @@ export default function ContinuePage() {
                     {otpStatus === "verifying" ? (
                       <>
                         Verifying…
-                        <SpinnerIcon className="animate-spin" size={18} />
+                        <CircleNotchIcon className="animate-spin" size={18} />
                       </>
                     ) : otpStatus === "verified" ? (
                       <>
@@ -464,7 +464,7 @@ export default function ContinuePage() {
                     Taking you back to the discussions...
                   </p>
                   <div className="mt-6 flex items-center justify-center gap-2 text-[13px] text-primary">
-                    <SpinnerIcon className="animate-spin" size={18} />
+                    <CircleNotchIcon className="animate-spin" size={18} />
                     Redirecting…
                   </div>
                 </div>

@@ -12,7 +12,7 @@ import {
   SealCheckIcon,
   CaretDownIcon,
   PaperPlaneIcon,
-  SpinnerGapIcon,
+  CircleNotchIcon,
   PlusCircleIcon,
 } from "@phosphor-icons/react";
 import { ActionMenu } from "./ActionMenu";
@@ -351,153 +351,147 @@ export function AnswerCard({
   return (
     <div
       className={cn(
-        "p-3 py-4 border border-transparent border-t-gray-200/75 transition-all duration-200 relative bg-white",
-        localIsAccepted && "border-purple-600"
+        "py-5 border-t border-gray-200/75 transition-all duration-200 relative bg-white group/card"
       )}
     >
-      {localIsAccepted && (
-        <>
-          <div className="absolute -top-1.5 -left-1.5 text-purple-600 z-10">
-            <SealCheckIcon size={20} weight="fill" className="bg-white rounded-4xl" />
+      {isAnswerAuthor && (
+        <div className="absolute top-0 left-1/10 z-10">
+          <div className="bg-purple-600/10 text-purple-600 text-[9px] font-bold px-2 py-0.5 rounded-b-md">
+            ACCEPTED
           </div>
-          {isAnswerAuthor && (
-            <div className="absolute top-0 right-30 bg-purple-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-b-lg shadow-sm animate-in fade-in slide-in-from-top-1 duration-500">
-              ANSWER ACCEPTED
-            </div>
-          )}
-        </>
+        </div>
       )}
 
-      <div className="flex gap-2.5 sm:gap-4">
-        <motion.div
-          animate={isVoteShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
-          transition={{ duration: 0.4 }}
-          className="flex flex-col items-center gap-0.5 pt-1"
-        >
-          <button
-            onClick={() => handleVote("up")}
-            className={cn(
-              "p-1 rounded-lg transition-all duration-200",
-              vote === "up"
-                ? "bg-green-600/10 text-green-600"
-                : "text-muted-foreground/40 hover:text-green-700 hover:bg-green-600/5"
-            )}
-          >
-            <ArrowFatUpIcon size={15} className="sm:w-[17px] sm:h-[17px]" weight={vote === "up" ? "fill" : "regular"} />
-          </button>
-          <span
-            className={cn(
-              "text-[10px] sm:text-[12px] font-bold tabular-nums min-w-[2ch] text-center",
-              localScore > 0
-                ? "text-primary"
-                : localScore < 0
-                  ? "text-red-500"
-                  : "text-muted-foreground/50"
-            )}
-          >
-            {localScore}
-          </span>
-          <button
-            onClick={() => handleVote("down")}
-            className={cn(
-              "p-1 rounded-lg transition-all duration-200",
-              vote === "down"
-                ? "bg-red-500/10 text-red-500"
-                : "text-muted-foreground/40 hover:text-red-500 hover:bg-red-500/5"
-            )}
-          >
-            <ArrowFatDownIcon size={15} className="sm:w-[17px] sm:h-[17px]" weight={vote === "down" ? "fill" : "regular"} />
-          </button>
-        </motion.div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center flex-wrap gap-1.5 sm:gap-2.5 mb-1.5 sm:mb-2.5">
-            <Avatar author={answer.author} gender={answer.author.gender} />
-            <span className="text-[11px] sm:text-[12.5px] font-semibold text-primary truncate max-w-[80px] xs:max-w-[120px] sm:max-w-none">{answer.author.name}</span>
-
-            {answer.author.emailVerified && (
-              <SealCheckIcon
-                size={11}
-                weight="fill"
-                className="text-blue-500 shrink-0"
-              />
-            )}
-            <span className="text-[10px] sm:text-[11.5px] text-muted-foreground/50 truncate">{timeAgo(answer.createdAt)}</span>
-            <div className="ml-auto flex items-center gap-1 sm:gap-2 shrink-0">
-              {isQuestionAuthor && (
-                <button
-                  onClick={handleAccept}
-                  disabled={isAccepting}
-                  className={cn(
-                    "flex items-center gap-1 text-[9.5px] sm:text-[11px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-md transition-all duration-200",
-                    localIsAccepted
-                      ? "text-green-600 bg-green-600/10"
-                      : "bg-gray-100 text-muted-foreground/60"
-                  )}
-                >
-                  {isAccepting ? (
-                    <SpinnerGapIcon size={10} className="animate-spin" />
-                  ) : (
-                    <SealCheckIcon size={10} className="sm:w-[11px] sm:h-[11px]" weight={localIsAccepted ? "fill" : "bold"} />
-                  )}
-                  <span className="hidden xs:inline">{localIsAccepted ? "Accepted" : "Accept"}</span>
-                </button>
-              )}
-              {session && (
-                <ActionMenu
-                  author={answer.author}
-                  onFlag={handleFlag}
-                  verifiedLabel="Verified Expert"
-                />
-              )}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Avatar author={answer.author} gender={answer.author.gender} size={28} />
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[12px] sm:text-[13px] font-bold text-primary truncate max-w-[120px] sm:max-w-[200px]">
+                  {answer.author.name}
+                </span>
+                {answer.author.emailVerified && (
+                  <SealCheckIcon
+                    size={12}
+                    weight="fill"
+                    className="text-blue-500 shrink-0"
+                  />
+                )}
+              </div>
+              <span className="text-[10px] sm:text-[11px] text-muted-foreground/50 leading-none">
+                {timeAgo(answer.createdAt)}
+              </span>
             </div>
           </div>
 
-          <p className="text-[10px] sm:text-[14px] text-foreground/85 leading-[1.6] sm:leading-[1.75] mb-2.5 sm:mb-3 wrap-break-word">
-            <LinkifiedText text={answer.body} />
-          </p>
+          <div className="flex items-center gap-1">
+            {isQuestionAuthor && (
+              <button
+                onClick={handleAccept}
+                disabled={isAccepting}
+                className={cn(
+                  "flex items-center gap-1 text-[10px] sm:text-[11px] px-2 py-1 rounded-full transition-all duration-200",
+                  localIsAccepted
+                    ? "text-purple-600 bg-purple-600/10"
+                    : "bg-gray-100 text-muted-foreground/60 hover:bg-gray-200"
+                )}
+              >
+                {isAccepting ? (
+                  <CircleNotchIcon size={12} className="animate-spin" />
+                ) : (
+                  <SealCheckIcon size={12} weight={localIsAccepted ? "fill" : "regular"} />
+                )}
+                {localIsAccepted ? "Accepted" : "Accept"}
+              </button>
+            )}
+            {session && (
+              <ActionMenu
+                author={answer.author}
+                onFlag={handleFlag}
+                verifiedLabel="Verified Expert"
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="text-[13px] sm:text-[14.5px] text-foreground/90 leading-relaxed wrap-break-word whitespace-pre-wrap pl-[38px] sm:pl-[38px]">
+          <LinkifiedText text={answer.body} />
+        </div>
+
+        <div className="flex items-center gap-4 sm:gap-6 pl-[38px] sm:pl-[38px]">
+          <motion.div
+            animate={isVoteShaking ? { x: [-2, 2, -2, 2, 0] } : {}}
+            transition={{ duration: 0.4 }}
+            className="flex items-center gap-1"
+          >
+            <button
+              onClick={() => handleVote("up")}
+              className={cn(
+                "p-1 rounded-md transition-all duration-200",
+                vote === "up"
+                  ? "text-green-600 bg-green-600/5"
+                  : "text-muted-foreground/30 hover:text-green-600 hover:bg-green-600/5"
+              )}
+            >
+              <ArrowFatUpIcon size={14} weight={vote === "up" ? "fill" : "regular"} />
+            </button>
+            <span
+              className={cn(
+                "text-[12px] font-bold tabular-nums min-w-[2ch] text-center",
+                localScore > 0
+                  ? "text-primary"
+                  : localScore < 0
+                    ? "text-red-500"
+                    : "text-muted-foreground/40"
+              )}
+            >
+              {localScore}
+            </span>
+            <button
+              onClick={() => handleVote("down")}
+              className={cn(
+                "p-1 rounded-md transition-all duration-200",
+                vote === "down"
+                  ? "text-red-500 bg-red-500/5"
+                  : "text-muted-foreground/30 hover:text-red-500 hover:bg-red-500/5"
+              )}
+            >
+              <ArrowFatDownIcon size={14} weight={vote === "down" ? "fill" : "regular"} />
+            </button>
+          </motion.div>
 
           <button
             onClick={handleToggleComments}
-            className="flex items-center gap-1 sm:gap-1.5 text-[10.5px] sm:text-[12px] text-muted-foreground/60 hover:text-primary transition-colors mb-1.5 sm:mb-2"
+            className="flex items-center gap-1.5 text-[11px] sm:text-[12px] text-muted-foreground/50 hover:text-primary transition-colors py-1"
           >
-            <ChatCircleDotsIcon size={12} className="sm:w-[14px] sm:h-[14px]" />
-            <span>
-              {showComments ? (
-                "Hide"
-              ) : localCommentCount === 0 ? (
-                <span className="hidden sm:inline">Add comment</span>
-              ) : (
-                <>
-                  {localCommentCount}
-                  <span className="hidden sm:inline ml-1">comments</span>
-                </>
-              )}
-            </span>
+            <ChatCircleDotsIcon size={14} />
+            <span>{localCommentCount}<span className="hidden sm:inline ml-1">{localCommentCount === 1 ? "Comment" : "Comments"}</span></span>
             <CaretDownIcon
-              size={10}
+              size={12}
               className={cn("transition-transform duration-200", showComments && "rotate-180")}
             />
           </button>
-
-          <AnimatePresence>
-            {showComments && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className=""
-              >
-                <div className="px-3 pt-1 pb-1 mb-2">
+        </div>
+        <AnimatePresence>
+          {showComments && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <div className="pl-[38px] sm:pl-[38px]">
+                <div className="pt-2 pb-1">
                   {isLoadingComments && localComments.length === 0 ? (
                     <div className="flex justify-center py-4">
-                      <SpinnerGapIcon size={18} className="animate-spin text-primary/30" />
+                      <CircleNotchIcon size={20} className="animate-spin text-primary/20" />
                     </div>
                   ) : localComments.length === 0 ? (
-                    <p className="text-[12px] text-muted-foreground/30 py-2">No comments yet.</p>
+                    <p className="text-[12px] text-muted-foreground/30 px-2 italic">No comments yet.</p>
                   ) : (
-                    <>
+                    <div className="space-y-1">
                       {localComments.map((c) => (
                         <CommentItem
                           key={c.id}
@@ -509,60 +503,60 @@ export function AnswerCard({
                       ))}
                       {isLoadingComments && (
                         <div className="flex justify-center py-3">
-                          <SpinnerGapIcon size={16} className="animate-spin text-primary/30" />
+                          <CircleNotchIcon size={18} className="animate-spin text-primary/20" />
                         </div>
                       )}
                       {hasMoreComments && !isLoadingComments && (
                         <Button
-                          variant="light"
-                          className="w-full text-black flex items-center gap-2 mt-2"
+                          variant="ghost"
+                          className="w-full text-muted-foreground text-[11px] hover:text-primary hover:bg-primary/5 mt-2"
                           onClick={() => fetchComments(commentPage + 1)}
                         >
                           Load more comments
-                          <PlusCircleIcon />
+                          <PlusCircleIcon className="ml-1" size={12} />
                         </Button>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
-                {isAnswerAuthor ||
+
+                {!isAnswerAuthor && (
                   <motion.div
-                    animate={isCommentShaking ? { x: [-3, 3, -3, 3, 0] } : {}}
+                    animate={isCommentShaking ? { x: [-2, 2, -2, 2, 0] } : {}}
                     transition={{ duration: 0.4 }}
+                    className="mt-4 mb-2"
                   >
                     <div className="flex items-center gap-1.5 bg-gray-100 shadow-inner my-4 rounded-4xl pl-2 pr-1 py-1 group/input w-full">
                       <Input
                         className="bg-transparent border-0! outline-0! ring-0! flex-1 text-[10.5px] sm:text-[11.5px] h-6"
                         placeholder="Add a comment..."
                         value={commentBody}
-                        onChange={(e) => !isAnswerAuthor && setCommentBody(e.target.value)}
+                        onChange={(e) => setCommentBody(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" && !isAnswerAuthor) handlePostComment();
+                          if (e.key === "Enter") handlePostComment();
                         }}
-                        disabled={isSubmitting || isAnswerAuthor}
+                        disabled={isSubmitting}
                       />
-                      {!isAnswerAuthor && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-black cursor-pointer rounded-4xl border-transparent hover:border-gray-200/20 hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
-                          onClick={handlePostComment}
-                          disabled={isSubmitting || !commentBody.trim()}
-                        >
-                          {isSubmitting ? (
-                            <SpinnerGapIcon size={9} className="animate-spin" />
-                          ) : (
-                            <PaperPlaneIcon size={9} className="rotate-45" />
-                          )}
-                        </Button>
-                      )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-black cursor-pointer rounded-4xl sm:border-transparent hover:border-gray-200/20 border-gray-200/20 hover:bg-white sm:bg-transparent bg-white sm:shadow-none shadow-sm hover:shadow-sm active:scale-95 shrink-0"
+                        onClick={handlePostComment}
+                        disabled={isSubmitting || !commentBody.trim()}
+                      >
+                        {isSubmitting ? (
+                          <CircleNotchIcon size={9} className="animate-spin" />
+                        ) : (
+                          <PaperPlaneIcon size={9} className="rotate-45" />
+                        )}
+                      </Button>
                     </div>
                   </motion.div>
-                }
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

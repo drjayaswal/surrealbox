@@ -16,7 +16,7 @@ import {
   ArrowFatDownIcon,
   ArrowBendUpLeftIcon,
   PaperPlaneIcon,
-  SpinnerGapIcon,
+  CircleNotchIcon,
   SealCheckIcon,
   CaretDownIcon,
 } from "@phosphor-icons/react";
@@ -393,7 +393,7 @@ export function CommentItem({
                 animate={{ rotate: showReplies ? 180 : 0 }}
                 transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
               >
-                <CaretDownIcon size={10}/>
+                <CaretDownIcon size={10} />
               </motion.div>
             </button>
           )}
@@ -423,12 +423,12 @@ export function CommentItem({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-7 w-7 text-black cursor-pointer rounded-4xl border-transparent hover:border-gray-200/20 hover:bg-white hover:shadow-sm active:scale-95 shrink-0"
+                  className="h-7 w-7 text-black cursor-pointer rounded-4xl sm:border-transparent hover:border-gray-200/20 border-gray-200/20 hover:bg-white sm:bg-transparent bg-white sm:shadow-none shadow-sm hover:shadow-sm active:scale-95 shrink-0"
                   onClick={handlePostReply}
                   disabled={isSubmittingReply || !replyBody.trim()}
                 >
                   {isSubmittingReply ? (
-                    <SpinnerGapIcon size={9} className="animate-spin" />
+                    <CircleNotchIcon size={9} className="animate-spin" />
                   ) : (
                     <PaperPlaneIcon size={9} className="rotate-45" />
                   )}
@@ -449,7 +449,7 @@ export function CommentItem({
             >
               {isLoadingReplies ? (
                 <div className="flex justify-center py-2">
-                  <SpinnerGapIcon size={12} className="animate-spin text-primary/30" />
+                  <CircleNotchIcon size={12} className="animate-spin text-primary/30" />
                 </div>
               ) : (
                 <div className="flex flex-col">

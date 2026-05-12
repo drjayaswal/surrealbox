@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { XIcon, PlusIcon, HashIcon, CaretRightIcon, SpinnerGapIcon, SealCheckIcon, CaretLeftIcon } from "@phosphor-icons/react";
+import { XIcon, PlusIcon, HashIcon, CaretRightIcon, CircleNotchIcon, SealCheckIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -396,7 +396,7 @@ export function AskQuestionModal({ open, onClose, onSubmit }: AskQuestionModalPr
                         disabled={isSubmitting}
                       >
                         {isSubmitting ? (
-                          <SpinnerGapIcon size={14} className="animate-spin" />
+                          <CircleNotchIcon size={14} className="animate-spin" />
                         ) : (
                           <PlusIcon size={14} weight="bold" />
                         )}

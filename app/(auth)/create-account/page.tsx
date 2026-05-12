@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRightIcon as ArrowRight,
   SealCheckIcon as CheckCircle,
-  SpinnerIcon,
+  CircleNotchIcon,
   ArrowCircleLeftIcon,
   ArrowsClockwiseIcon,
 } from "@phosphor-icons/react";
@@ -317,7 +317,7 @@ export default function CreateAccountPage() {
                         <AnimatePresence>
                           {usernameStatus === "checking" && (
                             <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              <SpinnerIcon className="animate-spin" size={14} /> Checking availability...
+                              <CircleNotchIcon className="animate-spin" size={14} /> Checking availability...
                             </motion.span>
                           )}
                           {usernameStatus === "taken" && (
@@ -390,7 +390,7 @@ export default function CreateAccountPage() {
                   >
                     {otpStatus === "sending" ? (
                       <>
-                        <SpinnerIcon className="animate-spin" size={18} />
+                        <CircleNotchIcon className="animate-spin" size={18} />
                         Sending code...
                       </>
                     ) : (
@@ -487,7 +487,7 @@ export default function CreateAccountPage() {
                     {otpStatus === "verifying" ? (
                       <>
                         Verifying...
-                        <SpinnerIcon className="animate-spin" size={18} />
+                        <CircleNotchIcon className="animate-spin" size={18} />
                       </>
                     ) : otpStatus === "verified" ? (
                       <>
@@ -521,7 +521,7 @@ export default function CreateAccountPage() {
                     Your account has been created
                   </p>
                   <div className="mt-6 flex items-center justify-center gap-2 text-[13px] text-primary">
-                    <SpinnerIcon className="animate-spin" size={18} />
+                    <CircleNotchIcon className="animate-spin" size={18} />
                     Redirecting…
                   </div>
                 </div>

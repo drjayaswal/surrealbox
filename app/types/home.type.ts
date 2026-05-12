@@ -9,6 +9,7 @@ export interface Author {
   avatarColor?: string;
   role?: string;
   emailVerified?: boolean;
+  image?: string | null;
 }
 
 export interface Comment {
