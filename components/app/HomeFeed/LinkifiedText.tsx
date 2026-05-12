@@ -9,7 +9,6 @@ interface LinkifiedTextProps {
 }
 
 export function LinkifiedText({ text, className, linkClassName }: LinkifiedTextProps) {
-  // Robust URL regex
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   
   const parts = text.split(urlRegex);

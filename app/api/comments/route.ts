@@ -3,7 +3,7 @@ import { auth } from "@/app/lib/auth";
 import { db } from "@/app/db/index";
 import { comments, answers, questions } from "@/app/db/schema";
 import { headers } from "next/headers";
-import { eq, desc, and, sql, isNull } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { checkContent } from "@/lib/moderator";
 
 export async function GET(req: NextRequest) {

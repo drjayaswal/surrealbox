@@ -19,7 +19,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validatedData = createAccountSchema.parse(body);
 
-    // 1. Check if username is already taken by ANOTHER user
     const existingUsername = await db.query.user.findFirst({
       where: and(
         eq(user.username, validatedData.username),
@@ -31,8 +30,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Username is already taken" }, { status: 400 });
     }
 
-    // 2. Update the user record
-    // We assume the user was already created by Better Auth's OTP verification
     const updatedUser = await db.update(user)
       .set({
         name: validatedData.name,
@@ -45,8 +42,6 @@ export async function POST(req: Request) {
       .returning();
 
     if (!updatedUser.length) {
-      // If user doesn't exist yet, we might need to create it, 
-      // but in the OTP flow, it should already be there.
       return NextResponse.json({ error: "User not found. Please verify your email first." }, { status: 404 });
     }
 
